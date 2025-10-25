@@ -26,7 +26,7 @@ export function useMarketplace() {
       arguments: [
         tx.object(MARKETPLACE_ID),
         tx.object(assetId),
-        tx.pure.u64(priceInMIST.toString()),
+        tx.pure.u64(priceInMIST),
       ],
     });
 
