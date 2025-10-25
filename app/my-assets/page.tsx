@@ -10,18 +10,9 @@ export default function MyAssetsPage() {
   const account = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const { listAsset } = useMarketplace();
-
-  // Cüzdan bağlı değilse uyarı göster
-  if (!account) {
-    return (
-      <main className="flex flex-col items-center justify-center min-h-screen p-4">
-        <h1 className="text-2xl font-bold">Connect Your Wallet</h1>
-        <p className="text-gray-500 mt-2">Please connect your wallet to view your assets.</p>
-      </main>
-    );
-  }
-
-  const { data: assets, isLoading, error, refetch } = useMyAssets(account.address);
+  // useMyAssets hook'u, account.address tanımsız olsa bile koşulsuz olarak çağrılmalıdır.
+  // Hook içindeki `enabled` seçeneği, adres mevcut olduğunda sorgunun çalışmasını sağlar.
+  const { data: assets, isLoading, error, refetch } = useMyAssets(account?.address);
 
   const handleListForRent = (assetId: string, price: string) => {
     listAsset(assetId, price).then((tx) => {
@@ -44,6 +35,16 @@ export default function MyAssetsPage() {
       );
     });
   };
+
+  // Hook çağrılarından sonra koşullu render işlemleri yapılır.
+  if (!account) {
+    return (
+      <main className="flex flex-col items-center justify-center min-h-screen p-4">
+        <h1 className="text-2xl font-bold">Connect Your Wallet</h1>
+        <p className="text-gray-500 mt-2">Please connect your wallet to view your assets.</p>
+      </main>
+    );
+  }
 
   if (isLoading) {
     return (
