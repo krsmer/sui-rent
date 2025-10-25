@@ -1,13 +1,35 @@
 import React from 'react'
+import SplitText from '@/components/SplitText';
 import Link from "next/link";
 
 const page = () => {
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
       <div className="text-center px-6 py-12 md:py-24">
-        <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900">
-          Welcome to <span className="text-blue-600">SuiRent</span>
-        </h1>
+        {/* Orijinal h1'in stillerini bu div'e taşıdık ve yazıları ortalamak için 'flex' ekledik */}
+        <div className="text-5xl md:text-6xl font-extrabold text-gray-900 flex justify-center">
+          {/* 1. Kısım: "Welcome to " */}
+          <SplitText
+            text="Welcome to "
+            splitType="chars"
+            from={{ opacity: 0, y: 40 }}
+            to={{ opacity: 1, y: 0 }}
+            duration={0.6}
+            ease="power3.out"
+            textAlign="left"
+          />
+          {/* 2. Kısım: "SuiRent" (Mavi renkte) */}
+          <SplitText
+            text="SuiRent"
+            className="text-blue-600" // Mavi renk için class'ı buraya verdik
+            splitType="chars"
+            from={{ opacity: 0, y: 40 }}
+            to={{ opacity: 1, y: 0 }}
+            duration={0.6}
+            ease="power3.out"
+            textAlign="left"
+          />
+        </div>
         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
           The decentralized marketplace for renting interactive assets on the Sui blockchain. Unlock the potential of your digital items or access what you need, right when you need it.
         </p>
