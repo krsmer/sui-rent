@@ -1,4 +1,5 @@
 "use client";
+import SplitText from '@/components/SplitText';
 
 import React from 'react';
 import AssetCard from '../components/AssetCard';
