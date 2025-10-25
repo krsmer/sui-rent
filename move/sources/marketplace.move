@@ -5,6 +5,7 @@ module marketplace::marketplace {
     use sui::tx_context::{Self, TxContext};
     use sui::object::{Self, ID, UID};
     use sui::event;
+    use sui::dynamic_object_field as dof;
 
     use marketplace::asset::Asset;
 
@@ -39,11 +40,11 @@ module marketplace::marketplace {
     }
 
     /// List an asset for rent on the marketplace
-    public fun list_for_rent(asset: Asset, price_per_day: u64, ctx: &mut TxContext) {
+    public fun list_for_rent(marketplace: &mut Marketplace, asset: Asset, price_per_day: u64, ctx: &mut TxContext) {
         let asset_id = object::id(&asset);
         let listing = Listing {
             id: object::new(ctx),
-            asset_id: object::id(&asset),
+            asset_id: asset_id,
             owner: tx_context::sender(ctx),
             price_per_day: price_per_day
         };
@@ -54,9 +55,10 @@ module marketplace::marketplace {
             price_per_day: price_per_day,
         });
 
-        // Transfer the asset into the listing object to establish ownership
-        transfer::public_transfer(asset, object::id_to_address(&object::id(&listing)));
-        // Transfer the listing to the owner as a receipt
-        transfer::public_transfer(listing, tx_context::sender(ctx));
+        // Asset'i listing içine koy
+        dof::add(&mut listing.id, b"asset", asset);
+        
+        // Listing'i Marketplace'e dynamic field olarak ekle
+        dof::add(&mut marketplace.id, asset_id, listing);
     }
 }

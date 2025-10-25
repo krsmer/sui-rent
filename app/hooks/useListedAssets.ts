@@ -8,12 +8,13 @@ const MARKETPLACE_ID = process.env.NEXT_PUBLIC_MARKETPLACE_ID!;
 
 // Pazar yerindeki bir varlığı temsil eden tip
 export interface ListedAsset {
-  listingId: string; // Listing objesinin ID'si
-  assetId: string;   // Varlığın kendi ID'si
+  listingId: string;
+  assetId: string;
   name: string;
   description: string;
   url: string;
-  pricePerDay: bigint; // Günlük kiralama bedeli (MIST cinsinden)
+  pricePerDay: bigint;
+  owner: string;
 }
 
 /**
@@ -25,42 +26,46 @@ export default function useListedAssets() {
   return useQuery<ListedAsset[], Error>({
     queryKey: ["listed-assets", MARKETPLACE_ID],
     queryFn: async () => {
-      // 1. Adım: Marketplace objesinin tüm dinamik alanlarını (Listing'leri) getir.
+      console.log("🔍 Fetching listings from Marketplace...");
+      console.log("Marketplace ID:", MARKETPLACE_ID);
+
+      // Marketplace objesinin tüm dinamik field'larını getir
       const { data: dynamicFields } = await client.getDynamicFields({
         parentId: MARKETPLACE_ID,
       });
 
-      if (!dynamicFields) return [];
+      console.log("📦 Dynamic fields:", dynamicFields);
 
-      // 2. Adım: Her bir Listing objesinin detayını `multiGetObjects` ile topluca getir.
+      if (!dynamicFields || dynamicFields.length === 0) {
+        console.log("⚠️ No listings found");
+        return [];
+      }
+
+      // Her bir dynamic field aslında bir Listing objesi
       const listingObjectIds = dynamicFields.map(df => df.objectId);
+      
       const listingObjects = await client.multiGetObjects({
         ids: listingObjectIds,
         options: { showContent: true },
       });
-      
-      // 3. Adım: Listing'lerden asset ID'lerini çıkar ve bu asset'lerin detaylarını topluca getir.
-      const assetIds = listingObjects
-        .map((obj: SuiObjectResponse) => {
-            const fields = (obj.data?.content?.dataType === 'moveObject' && obj.data.content.fields) ? obj.data.content.fields as any : null;
-            return fields?.asset_id;
-        })
-        .filter((id): id is string => id != null);
 
-      const assetObjects = await client.multiGetObjects({
-        ids: assetIds,
-        options: { showContent: true },
-      });
+      console.log("� Listing objects:", listingObjects);
 
-      // 4. Adım: Verileri birleştirerek son `ListedAsset` listesini oluştur.
-      const listedAssets = listingObjects.map((listingObj: SuiObjectResponse) => {
+      // Asset ID'lerini topla (asset'ler listing içinde dynamic field olarak)
+      const assetPromises = listingObjects.map(async (listingObj: SuiObjectResponse) => {
         const listingFields = (listingObj.data?.content?.dataType === 'moveObject' && listingObj.data.content.fields) ? listingObj.data.content.fields as any : null;
         if (!listingFields) return null;
 
-        const assetObject = assetObjects.find((asset: SuiObjectResponse) => asset.data?.objectId === listingFields.asset_id);
-        if (!assetObject) return null;
+        // Asset listing içinde "asset" key'i ile dynamic field olarak
+        const assetDynamicField = await client.getDynamicFieldObject({
+          parentId: listingObj.data!.objectId,
+          name: {
+            type: "vector<u8>",
+            value: "asset"
+          }
+        });
 
-        const assetFields = (assetObject.data?.content?.dataType === 'moveObject' && assetObject.data.content.fields) ? assetObject.data.content.fields as any : {};
+        const assetFields = (assetDynamicField.data?.content?.dataType === 'moveObject' && assetDynamicField.data.content.fields) ? assetDynamicField.data.content.fields as any : {};
 
         return {
           listingId: listingObj.data!.objectId,
@@ -69,9 +74,13 @@ export default function useListedAssets() {
           description: assetFields.description || "No description.",
           url: assetFields.url || "",
           pricePerDay: BigInt(listingFields.price_per_day),
+          owner: listingFields.owner,
         };
-      }).filter((asset): asset is ListedAsset => asset !== null);
+      });
 
+      const listedAssets = (await Promise.all(assetPromises)).filter((asset): asset is ListedAsset => asset !== null);
+
+      console.log("✅ Final listed assets:", listedAssets);
       return listedAssets;
     },
     refetchOnWindowFocus: false,

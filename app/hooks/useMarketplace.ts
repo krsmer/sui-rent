@@ -22,7 +22,7 @@ export function useMarketplace() {
     const tx = new Transaction();
 
     tx.moveCall({
-      target: `${PACKAGE_ID}::marketplace::list_asset`,
+      target: `${PACKAGE_ID}::marketplace::list_for_rent`,
       arguments: [
         tx.object(MARKETPLACE_ID),
         tx.object(assetId),
@@ -33,9 +33,38 @@ export function useMarketplace() {
     return tx;
   };
 
-  // TODO: Diğer marketplace fonksiyonları buraya eklenecek (rent_asset, claim_asset vb.)
+  /**
+   * Bir varlığı belirli bir süre için kiralar.
+   * @param listingId Kiralanan listing objesinin ID'si.
+   * @param days Kiralama süresi (gün cinsinden).
+   * @param totalPrice Toplam kiralama bedeli (SUI cinsinden).
+   * @returns Transaction nesnesi.
+   */
+  const rentAsset = async (listingId: string, days: number, totalPrice: string) => {
+    const totalPriceInMIST = BigInt(parseFloat(totalPrice) * 1_000_000_000);
+    const tx = new Transaction();
+
+    // Ödeme için coin oluştur
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(totalPriceInMIST.toString())]);
+
+    tx.moveCall({
+      target: `${PACKAGE_ID}::marketplace::rent_asset`,
+      arguments: [
+        tx.object(MARKETPLACE_ID),
+        tx.object(listingId),
+        tx.pure.u64(days.toString()),
+        coin,
+        tx.object(SUI_CLOCK_OBJECT_ID),
+      ],
+    });
+
+    return tx;
+  };
+
+  // TODO: Diğer marketplace fonksiyonları buraya eklenecek (claim_asset vb.)
 
   return {
     listAsset,
+    rentAsset,
   };
 }
