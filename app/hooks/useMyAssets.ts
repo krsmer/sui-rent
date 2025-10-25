@@ -48,14 +48,15 @@ export default function useMyAssets(ownerAddress?: string) {
 
       console.log("📦 All objects:", allObjects);
 
-      // Manuel filtreleme yap
+      // Manuel filtreleme yap - SADECE YENİ CONTRACT'TAKI ASSET'LERİ GÖSTER
       const filteredData = allObjects?.filter((obj) => {
         const objectType = obj.data?.type;
         console.log("Checking type:", objectType, "against:", ASSET_TYPE);
-        return objectType?.includes("::asset::Asset");
+        // Tam eşleşme kontrolü - sadece yeni package ID'li asset'ler
+        return objectType === ASSET_TYPE;
       });
 
-      console.log("🎯 Filtered assets:", filteredData);
+      console.log("🎯 Filtered assets (new contract only):", filteredData);
 
       if (!filteredData || filteredData.length === 0) {
         console.log("⚠️ No assets found");

@@ -102,4 +102,41 @@ module marketplace::marketplace {
         listing.rented_until = current_time + rental_duration_ms;
         listing.renter = tx_context::sender(ctx);
     }
+
+    /// Claim back an asset from the marketplace
+    /// Only owner can claim, and only if:
+    /// - Not currently rented (rented_until < current_time)
+    /// - Or never rented (renter == @0x0)
+    /// Error: Not the owner (ERR_NOT_OWNER = 4)
+    /// Error: Still rented (ERR_STILL_RENTED = 5)
+    public fun claim_asset(
+        marketplace: &mut Marketplace,
+        asset_id: ID,
+        clock: &Clock,
+        ctx: &mut TxContext
+    ) {
+        // Listing'i marketplace'den çıkar
+        let Listing {
+            id,
+            asset_id: _,
+            owner,
+            price_per_day: _,
+            rented_until,
+            renter: _,
+        } = dof::remove(&mut marketplace.id, asset_id);
+
+        // Sadece owner geri alabilir
+        assert!(owner == tx_context::sender(ctx), 4); // ERR_NOT_OWNER
+
+        // Kiralama süresi dolmuş olmalı
+        let current_time = clock::timestamp_ms(clock);
+        assert!(rented_until < current_time, 5); // ERR_STILL_RENTED
+
+        // Asset'i listing'den çıkar ve owner'a gönder
+        let asset: Asset = dof::remove(&mut id, b"asset");
+        transfer::public_transfer(asset, owner);
+
+        // Listing objesini yok et
+        object::delete(id);
+    }
 }

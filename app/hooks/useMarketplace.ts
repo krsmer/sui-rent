@@ -76,10 +76,30 @@ export function useMarketplace() {
     return tx;
   };
 
-  // TODO: Diğer marketplace fonksiyonları buraya eklenecek (claim_asset vb.)
+  /**
+   * Listelenen bir varlığı geri çeker.
+   * Sadece owner çağırabilir ve kiralama süresi dolmuş olmalı.
+   * @param assetId Geri çekilecek asset'in ID'si.
+   * @returns Transaction nesnesi.
+   */
+  const claimAsset = async (assetId: string) => {
+    const tx = new Transaction();
+
+    tx.moveCall({
+      target: `${PACKAGE_ID}::marketplace::claim_asset`,
+      arguments: [
+        tx.object(MARKETPLACE_ID),       // marketplace: &mut Marketplace
+        tx.pure.id(assetId),              // asset_id: ID
+        tx.object(SUI_CLOCK_OBJECT_ID),  // clock: &Clock
+      ],
+    });
+
+    return tx;
+  };
 
   return {
     listAsset,
     rentAsset,
+    claimAsset,
   };
 }
