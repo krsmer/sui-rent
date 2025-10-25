@@ -1,12 +1,47 @@
 "use client";
 
 import React from 'react';
+import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
 import AssetCard from '../components/AssetCard';
 import useListedAssets from '../hooks/useListedAssets';
+import { useMarketplace } from '../hooks/useMarketplace';
 import { Asset } from '../hooks/useMyAssets';
 
 export default function MarketplacePage() {
-  const { data: listedAssets, isLoading, error } = useListedAssets();
+  const { data: listedAssets, isLoading, error, refetch } = useListedAssets();
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction();
+  const { rentAsset } = useMarketplace();
+
+  const handleRent = (assetId: string, days: number) => {
+    // assetId burada aslında listingId. Bunu düzeltelim.
+    const listing = listedAssets?.find(la => la.assetId === assetId);
+    if (!listing) {
+      alert("Listing not found!");
+      return;
+    }
+
+    const pricePerDayInSUI = Number(listing.pricePerDay) / 1_000_000_000;
+    const totalPrice = (pricePerDayInSUI * days).toFixed(9); // Yüksek hassasiyet
+
+    rentAsset(listing.listingId, days, totalPrice).then((tx) => {
+      signAndExecute(
+        {
+          transaction: tx,
+        },
+        {
+          onSuccess: (result) => {
+            console.log("Asset rented successfully:", result);
+            alert(`Asset rented for ${days} day(s)!`);
+            refetch();
+          },
+          onError: (error) => {
+            console.error("Error renting asset:", error);
+            alert("Error renting asset.");
+          },
+        }
+      );
+    });
+  };
 
   if (isLoading) {
     return (
@@ -25,13 +60,14 @@ export default function MarketplacePage() {
   }
 
   // ListedAsset tipini AssetCard'ın beklediği Asset tipine dönüştür
-  const assetsToDisplay: Asset[] = listedAssets?.map(la => ({
+  const assetsToDisplay: Array<Asset & { pricePerDay: bigint, listingId: string }> = listedAssets?.map(la => ({
     id: la.assetId,
     name: la.name,
     description: la.description,
     url: la.url,
-    owner: '', // Pazar yerinde sahibi göstermek şimdilik gerekli değil
-    // TODO: Fiyat bilgisini AssetCard'a ekleyip burada gösterebiliriz
+    owner: '',
+    pricePerDay: la.pricePerDay,
+    listingId: la.listingId,
   })) || [];
 
   return (
@@ -44,8 +80,9 @@ export default function MarketplacePage() {
             <AssetCard 
               key={asset.id} 
               asset={asset} 
-              isOwner={false} // Kiracı olarak görüntülüyor
-              // TODO: onRent prop'unu burada bağlayacağız
+              isOwner={false}
+              pricePerDay={asset.pricePerDay}
+              onRent={handleRent}
             />
           ))}
         </div>

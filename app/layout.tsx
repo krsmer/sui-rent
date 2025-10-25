@@ -9,10 +9,11 @@ import { getFullnodeUrl } from "@mysten/sui/client";
 import {
   SuiClientProvider,
   WalletProvider,
-  ConnectButton,
 } from "@mysten/dapp-kit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Link from "next/link";
+import { ConnectWalletButton } from "./components/ConnectWalletButton";
+import { useState } from "react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,9 +25,8 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const queryClient = new QueryClient();
 const networks = {
-  testnet: { url: getFullnodeUrl("testnet") },
+  testnet: { url: "https://fullnode.testnet.sui.io:443" },
   devnet: { url: getFullnodeUrl("devnet") },
 };
 
@@ -41,13 +41,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [queryClient] = useState(() => new QueryClient());
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans`}
       >
         <QueryClientProvider client={queryClient}>
-          <SuiClientProvider networks={networks} defaultNetwork="devnet">
+          <SuiClientProvider networks={networks} defaultNetwork="testnet">
             <WalletProvider autoConnect>
               <header className="bg-gray-900 text-white p-4">
                 <div className="container mx-auto flex justify-between items-center">
@@ -61,7 +63,7 @@ export default function RootLayout({
                     <Link href="/my-assets" className="hover:text-gray-300">
                       My Assets
                     </Link>
-                    <ConnectButton />
+                    <ConnectWalletButton />
                   </nav>
                 </div>
               </header>

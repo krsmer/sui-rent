@@ -7,12 +7,17 @@ import { Asset } from "../hooks/useMyAssets"; // Asset tipini hook'tan import et
 interface AssetCardProps {
   asset: Asset;
   isOwner: boolean; // Kartın sahibi tarafından mı görüntülendiğini belirtir
+  pricePerDay?: bigint; // Günlük kiralama bedeli (MIST cinsinden, opsiyonel)
   onListForRent?: (assetId: string, price: string) => void; // Kiraya verme fonksiyonu
   onRent?: (assetId: string, days: number) => void; // Kiralama fonksiyonu
 }
 
-export default function AssetCard({ asset, isOwner, onListForRent, onRent }: AssetCardProps) {
+export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, onRent }: AssetCardProps) {
   const [days, setDays] = useState(1);
+
+  // Fiyatı SUI cinsine çevir (1 SUI = 1,000,000,000 MIST)
+  const priceInSUI = pricePerDay ? Number(pricePerDay) / 1_000_000_000 : 0;
+  const totalPrice = priceInSUI * days;
 
   const handleListClick = () => {
     // Fiyat girişi için basit bir prompt kullanıyoruz.
@@ -48,8 +53,12 @@ export default function AssetCard({ asset, isOwner, onListForRent, onRent }: Ass
         <h3 className="text-lg font-bold">{asset.name}</h3>
         <p className="text-sm text-gray-600 mt-1 truncate">{asset.description}</p>
         
-        {/* TODO: Varlığın kiralama durumuna göre fiyat veya durum göster */}
-        {/* <p className="text-md font-semibold mt-2">Price: 10 SUI/day</p> */}
+        {/* Fiyat bilgisini göster (eğer kiracı görünümündeyse) */}
+        {!isOwner && pricePerDay && (
+          <p className="text-md font-semibold mt-2 text-blue-600">
+            {priceInSUI.toFixed(2)} SUI/day
+          </p>
+        )}
 
         <div className="mt-4">
           {isOwner ? (
@@ -65,7 +74,22 @@ export default function AssetCard({ asset, isOwner, onListForRent, onRent }: Ass
             </div>
           ) : (
             // Kiracı için butonlar
-            <div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Days:</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={days}
+                  onChange={(e) => setDays(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-20 px-2 py-1 border rounded"
+                />
+              </div>
+              {pricePerDay && (
+                <p className="text-sm text-gray-600">
+                  Total: <span className="font-semibold">{totalPrice.toFixed(2)} SUI</span>
+                </p>
+              )}
               <button 
                 onClick={handleRentClick}
                 className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors"

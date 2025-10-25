@@ -32,27 +32,42 @@ export default function useMyAssets(ownerAddress?: string) {
         throw new Error("Owner address is required");
       }
 
-      const { data } = await client.getOwnedObjects({
+      console.log("🔍 Fetching assets...");
+      console.log("Owner:", ownerAddress);
+      console.log("Asset Type:", ASSET_TYPE);
+
+      // Filtresiz tüm objeleri çek
+      const { data: allObjects } = await client.getOwnedObjects({
         owner: ownerAddress,
-        filter: {
-          StructType: ASSET_TYPE,
-        },
         options: {
           showContent: true,
           showDisplay: true,
+          showType: true,
         },
       });
 
-      // TODO: Kiosk içindeki varlıkları da getirecek mantığı ekle
-      // Şu an sadece doğrudan sahip olunan varlıkları getiriyor.
+      console.log("📦 All objects:", allObjects);
 
-      if (!data) {
+      // Manuel filtreleme yap
+      const filteredData = allObjects?.filter((obj) => {
+        const objectType = obj.data?.type;
+        console.log("Checking type:", objectType, "against:", ASSET_TYPE);
+        return objectType?.includes("::asset::Asset");
+      });
+
+      console.log("🎯 Filtered assets:", filteredData);
+
+      if (!filteredData || filteredData.length === 0) {
+        console.log("⚠️ No assets found");
         return [];
       }
 
-      const assets = data.map((response: SuiObjectResponse) => {
+      console.log(`✅ Found ${filteredData.length} objects`);
+
+      const assets = filteredData.map((response: SuiObjectResponse) => {
         const obj = response.data!;
         const fields = (obj.content?.dataType === 'moveObject' && obj.content.fields) ? obj.content.fields as any : {};
+        console.log("🎨 Object:", obj.objectId, "Fields:", fields);
         return {
           id: obj.objectId,
           name: fields.name || "Unnamed Asset",
@@ -62,6 +77,7 @@ export default function useMyAssets(ownerAddress?: string) {
         };
       });
 
+      console.log("✨ Final assets:", assets);
       return assets;
     },
     enabled: !!ownerAddress, // Sadece ownerAddress varsa sorguyu çalıştır

@@ -10,8 +10,10 @@ export default function MyAssetsPage() {
   const account = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const { listAsset } = useMarketplace();
-  // useMyAssets hook'u, account.address tanımsız olsa bile koşulsuz olarak çağrılmalıdır.
-  // Hook içindeki `enabled` seçeneği, adres mevcut olduğunda sorgunun çalışmasını sağlar.
+  
+  console.log("🔐 Current account:", account);
+  console.log("📍 Account address:", account?.address);
+  
   const { data: assets, isLoading, error, refetch } = useMyAssets(account?.address);
 
   const handleListForRent = (assetId: string, price: string) => {
@@ -50,6 +52,7 @@ export default function MyAssetsPage() {
     return (
         <main className="flex flex-col items-center justify-center min-h-screen p-4">
             <h1 className="text-2xl font-bold">Loading your assets...</h1>
+            <p className="text-gray-500 mt-2">Address: {account.address}</p>
         </main>
     )
   }
@@ -57,7 +60,9 @@ export default function MyAssetsPage() {
   if (error) {
     return (
         <main className="flex flex-col items-center justify-center min-h-screen p-4">
-            <h1 className="text-2xl font-bold">Error loading assets: {error.message}</h1>
+            <h1 className="text-2xl font-bold text-red-600">Error loading assets</h1>
+            <p className="text-gray-500 mt-2">{error.message}</p>
+            <p className="text-sm text-gray-400 mt-2">Address: {account.address}</p>
         </main>
     )
   }
@@ -65,6 +70,11 @@ export default function MyAssetsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-4xl font-bold text-center mb-8">My Assets</h1>
+      
+      <div className="bg-gray-100 p-4 rounded mb-4 text-sm">
+        <p><strong>Wallet:</strong> {account.address}</p>
+        <p><strong>Assets found:</strong> {assets?.length || 0}</p>
+      </div>
       
       {assets && assets.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
