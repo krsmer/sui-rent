@@ -2,6 +2,7 @@ module marketplace::marketplace {
     use sui::sui::SUI;
     use sui::balance::{Self, Balance};
     use sui::coin;
+    use sui::clock::{Self, Clock};
     use sui::transfer;
     use sui::tx_context::{Self, TxContext};
     use sui::object::{Self, ID, UID};
@@ -21,7 +22,9 @@ module marketplace::marketplace {
         id: UID,
         asset_id: ID,
         owner: address,
-        price_per_day: u64
+        price_per_day: u64,
+        rented_until: u64, // Timestamp in milliseconds (0 if not rented)
+        renter: address,   // Current renter address (0x0 if not rented)
     }
 
     // Events
@@ -47,7 +50,9 @@ module marketplace::marketplace {
             id: object::new(ctx),
             asset_id: asset_id,
             owner: tx_context::sender(ctx),
-            price_per_day: price_per_day
+            price_per_day: price_per_day,
+            rented_until: 0,
+            renter: @0x0,
         };
 
         event::emit(AssetListed {
@@ -70,6 +75,7 @@ module marketplace::marketplace {
         asset_id: ID,
         payment: coin::Coin<SUI>,
         rental_days: u64,
+        clock: &Clock,
         ctx: &mut TxContext
     ) {
         // Listing'i marketplace'den al
@@ -77,6 +83,10 @@ module marketplace::marketplace {
         
         // Kendi NFT'ini kiralayamazsın kontrolü
         assert!(listing.owner != tx_context::sender(ctx), 1); // ERR_OWNER_CANNOT_RENT
+        
+        // Şu anda kiralanmış mı kontrol et
+        let current_time = clock::timestamp_ms(clock);
+        assert!(listing.rented_until < current_time, 3); // ERR_ALREADY_RENTED
         
         // Ödeme miktarını kontrol et
         let total_price = listing.price_per_day * rental_days;
@@ -87,7 +97,9 @@ module marketplace::marketplace {
         let payment_balance = coin::into_balance(payment);
         balance::join(&mut marketplace.balance, payment_balance);
         
-        // TODO: Rental tracking (kiralama kaydı) eklenecek
-        // Şimdilik sadece ödeme alınıyor, asset hala listing içinde kalıyor
+        // Kiralama bilgilerini güncelle
+        let rental_duration_ms = rental_days * 86400000; // days to milliseconds
+        listing.rented_until = current_time + rental_duration_ms;
+        listing.renter = tx_context::sender(ctx);
     }
 }

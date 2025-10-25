@@ -14,7 +14,7 @@ export default function MarketplacePage() {
   const { rentAsset } = useMarketplace();
 
   const handleRent = (assetId: string, days: number) => {
-    // assetId burada aslında listingId. Bunu düzeltelim.
+    // assetId buraya geldiğinde aslında asset'in gerçek ID'si
     const listing = listedAssets?.find(la => la.assetId === assetId);
     if (!listing) {
       alert("Listing not found!");
@@ -24,7 +24,7 @@ export default function MarketplacePage() {
     const pricePerDayInSUI = Number(listing.pricePerDay) / 1_000_000_000;
     const totalPrice = (pricePerDayInSUI * days).toFixed(9); // Yüksek hassasiyet
 
-    rentAsset(listing.listingId, days, totalPrice).then((tx) => {
+    rentAsset(assetId, days, totalPrice).then((tx) => {
       signAndExecute(
         {
           transaction: tx,

@@ -19,13 +19,28 @@ export function useMarketplace() {
    */
   const listAsset = async (assetId: string, price: string) => {
     const priceInMIST = BigInt(parseFloat(price) * 1_000_000_000);
+    
+    // Owned object için version ve digest bilgisini al
+    const assetObject = await client.getObject({
+      id: assetId,
+      options: { showOwner: true }
+    });
+    
+    if (!assetObject.data) {
+      throw new Error("Asset not found");
+    }
+
     const tx = new Transaction();
 
     tx.moveCall({
       target: `${PACKAGE_ID}::marketplace::list_for_rent`,
       arguments: [
-        tx.object(MARKETPLACE_ID),
-        tx.object(assetId),
+        tx.object(MARKETPLACE_ID), // Shared object
+        tx.objectRef({
+          objectId: assetId,
+          version: assetObject.data.version,
+          digest: assetObject.data.digest,
+        }), // Owned object with full reference
         tx.pure.u64(priceInMIST),
       ],
     });
@@ -35,26 +50,26 @@ export function useMarketplace() {
 
   /**
    * Bir varlığı belirli bir süre için kiralar.
-   * @param listingId Kiralanan listing objesinin ID'si.
+   * @param assetId Kiralanacak asset'in ID'si.
    * @param days Kiralama süresi (gün cinsinden).
    * @param totalPrice Toplam kiralama bedeli (SUI cinsinden).
    * @returns Transaction nesnesi.
    */
-  const rentAsset = async (listingId: string, days: number, totalPrice: string) => {
+  const rentAsset = async (assetId: string, days: number, totalPrice: string) => {
     const totalPriceInMIST = BigInt(parseFloat(totalPrice) * 1_000_000_000);
     const tx = new Transaction();
 
     // Ödeme için coin oluştur
-    const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(totalPriceInMIST.toString())]);
+    const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(totalPriceInMIST)]);
 
     tx.moveCall({
       target: `${PACKAGE_ID}::marketplace::rent_asset`,
       arguments: [
-        tx.object(MARKETPLACE_ID),
-        tx.object(listingId),
-        tx.pure.u64(days.toString()),
-        coin,
-        tx.object(SUI_CLOCK_OBJECT_ID),
+        tx.object(MARKETPLACE_ID),      // marketplace: &mut Marketplace
+        tx.pure.id(assetId),             // asset_id: ID
+        coin,                            // payment: coin::Coin<SUI>
+        tx.pure.u64(days),               // rental_days: u64
+        tx.object(SUI_CLOCK_OBJECT_ID),  // clock: &Clock
       ],
     });
 
