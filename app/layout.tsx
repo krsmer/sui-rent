@@ -12,6 +12,7 @@ import {
   ConnectButton,
 } from "@mysten/dapp-kit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,18 +44,28 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} font-sans`}
       >
         <QueryClientProvider client={queryClient}>
-          <SuiClientProvider networks={networks} defaultNetwork="testnet">
-            <WalletProvider>
-              <header className="border-b sticky top-0 bg-gray-300  backdrop-blur-sm z-10">
-                <div className="container mx-auto flex items-center justify-between p-4">
-                  <h1 className="text-lg font-semibold">SuiRent</h1>
-                  <ConnectButton />
+          <SuiClientProvider networks={networks} defaultNetwork="devnet">
+            <WalletProvider autoConnect>
+              <header className="bg-gray-900 text-white p-4">
+                <div className="container mx-auto flex justify-between items-center">
+                  <Link href="/" className="text-2xl font-bold">
+                    SuiRent
+                  </Link>
+                  <nav className="flex items-center space-x-4">
+                    <Link href="/marketplace" className="hover:text-gray-300">
+                      Marketplace
+                    </Link>
+                    <Link href="/my-assets" className="hover:text-gray-300">
+                      My Assets
+                    </Link>
+                    <ConnectButton />
+                  </nav>
                 </div>
               </header>
-              <main className="container mx-auto p-4">{children}</main>
+              <main>{children}</main>
             </WalletProvider>
           </SuiClientProvider>
         </QueryClientProvider>
