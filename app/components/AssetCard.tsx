@@ -87,8 +87,8 @@ export default function AssetCard({
 
   return (
     <>
-      <BackgroundGradient className="rounded-[22px] max-w-sm p-4 sm:p-10 bg-white dark:bg-zinc-900 h-full flex flex-col">
-        <div className="flex flex-col h-full">
+      <BackgroundGradient className="rounded-[22px] w-full h-full p-4 sm:p-6 bg-white dark:bg-zinc-900 flex flex-col">
+        <div className="flex flex-col h-full gap-3">
           <div className="relative w-full h-48 bg-neutral-100 dark:bg-zinc-800 rounded-xl overflow-hidden shrink-0">
             {asset.url ? (
               <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
@@ -105,7 +105,7 @@ export default function AssetCard({
           </div>
 
           {asset.rentedUntil && (
-            <div className="mt-3 px-3 py-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg border border-blue-500/20">
+            <div className="px-3 py-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg border border-blue-500/20 shrink-0">
               <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">⏰ {getRemainingTime()}</p>
               {asset.owner && (
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Owner: {asset.owner.slice(0, 6)}...{asset.owner.slice(-4)}</p>
@@ -114,13 +114,13 @@ export default function AssetCard({
           )}
 
           {!isOwner && !asset.rentedUntil && pricePerDay && (
-            <div className="mt-3 flex items-center justify-between">
+            <div className="flex items-center justify-between shrink-0">
               <span className="text-sm text-neutral-600 dark:text-neutral-400">Price per day</span>
               <span className="text-lg font-bold text-black dark:text-white">{priceInSUI.toFixed(2)} SUI</span>
             </div>
           )}
 
-          <div className="mt-4">
+          <div className="shrink-0">
             {isOwner ? (
               <button onClick={handleListClick} className="rounded-full w-full py-2.5 text-white font-semibold bg-black dark:bg-zinc-800 hover:opacity-90 transition-opacity">
                 List for Rent
@@ -161,18 +161,18 @@ export default function AssetCard({
             ) : asset.rentedUntil ? (
               <div className="text-center text-sm text-neutral-600 dark:text-neutral-400 font-medium">Currently using this asset</div>
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Days:</label>
-                  <input type="number" min="1" value={days} onChange={(e) => setDays(Math.max(1, parseInt(e.target.value) || 1))} className="flex-1 px-3 py-1.5 border border-neutral-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-white" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-neutral-700 dark:text-neutral-300 shrink-0">Days:</label>
+                  <input type="number" min="1" value={days} onChange={(e) => setDays(Math.max(1, parseInt(e.target.value) || 1))} className="flex-1 px-2 py-1 text-sm border border-neutral-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-white" />
                 </div>
                 {pricePerDay && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-neutral-600 dark:text-neutral-400">Total Price:</span>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-600 dark:text-neutral-400">Total:</span>
                     <span className="font-bold text-black dark:text-white">{totalPrice.toFixed(2)} SUI</span>
                   </div>
                 )}
-                <button onClick={handleRentClick} className="rounded-full w-full py-2.5 text-white font-semibold bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                <button onClick={handleRentClick} className="rounded-full w-full py-2 text-sm text-white font-semibold bg-emerald-600 hover:bg-emerald-700 transition-colors">
                   Rent Now
                 </button>
               </div>

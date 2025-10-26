@@ -98,9 +98,9 @@ export default function MarketplacePage() {
       
       {assetsToDisplay.length > 0 ? (
         <StaggerContainer staggerDelay={0.1}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 auto-rows-fr">
             {assetsToDisplay.map((asset) => (
-              <FadeIn key={asset.id} delay={0.05}>
+              <FadeIn key={asset.id} delay={0.05} className="h-full">
                 <AssetCard 
                   asset={asset} 
                   isOwner={false}
