@@ -16,16 +16,13 @@ export default function MarketplacePage() {
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const { rentAsset } = useMarketplace();
 
-  const handleRent = (assetId: string, assetType: string, days: number) => {
+  const handleRent = async (assetId: string, assetType: string, days: number, totalPrice: string) => {
     // assetId buraya geldiğinde aslında asset'in gerçek ID'si
     const listing = listedAssets?.find(la => la.assetId === assetId);
     if (!listing) {
       alert("Listing not found!");
       return;
     }
-
-    const pricePerDayInSUI = Number(listing.pricePerDay) / 1_000_000_000;
-    const totalPrice = (pricePerDayInSUI * days).toFixed(9); // Yüksek hassasiyet
 
     rentAsset(assetId, assetType, days, totalPrice).then((tx) => {
       signAndExecute(
@@ -106,7 +103,6 @@ export default function MarketplacePage() {
                 <AssetCard 
                   asset={asset} 
                   isOwner={false}
-                  pricePerDay={asset.pricePerDay}
                   onRent={handleRent}
                 />
               </FadeIn>

@@ -1,33 +1,80 @@
-"use client";
+﻿'use client';
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import { Asset } from "../hooks/useMyAssets"; // Asset tipini hook'tan import et
+import { useState } from 'react';
+import { BackgroundGradient } from '@/components/ui/background-gradient';
 
-interface AssetCardProps {
-  asset: Asset & { rentedUntil?: number; owner?: string; isRented?: boolean; renter?: string }; // extended type
-  isOwner: boolean; // Kartın sahibi tarafından mı görüntülendiğini belirtir
-  pricePerDay?: bigint; // Günlük kiralama bedeli (MIST cinsinden, opsiyonel)
-  onListForRent?: (assetId: string, assetType: string, price: string) => void; // Kiraya verme fonksiyonu
-  onRent?: (assetId: string, assetType: string, days: number) => void; // Kiralama fonksiyonu - assetType eklendi
-  onClaimBack?: (assetId: string, assetType: string) => void; // Geri çekme fonksiyonu
-  onReturnAsset?: (assetId: string, assetType: string) => void; // İade fonksiyonu (kiracı için)
+// Generic asset interface that covers all use cases
+interface GenericAsset {
+  id?: string; // for user assets
+  assetId?: string; // for listed assets
+  listingId?: string; // for listed assets  
+  name: string;
+  description: string;
+  url: string;
+  pricePerDay?: bigint | string;
+  owner?: string;
+  renter?: string;
+  rentedUntil?: number | string;
+  isRented?: boolean;
+  type: string;
 }
 
-export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, onRent, onClaimBack, onReturnAsset }: AssetCardProps) {
-  const [days, setDays] = useState(1);
-  const [imageError, setImageError] = useState(false);
+interface AssetCardProps {
+  asset: GenericAsset;
+  onList?: (assetId: string, assetType: string, price: string) => Promise<void>;
+  onRent?: (assetId: string, assetType: string, days: number, totalPrice: string) => Promise<void>;
+  onClaimBack?: (assetId: string, assetType: string) => Promise<void>;
+  onReturnAsset?: (assetId: string, assetType: string) => Promise<void>;
+  isOwner?: boolean;
+  currentAddress?: string;
+}
 
-  // Fiyatı SUI cinsine çevir (1 SUI = 1,000,000,000 MIST)
-  const priceInSUI = pricePerDay ? Number(pricePerDay) / 1_000_000_000 : 0;
+export default function AssetCard({ 
+  asset, 
+  onList, 
+  onRent, 
+  onClaimBack,
+  onReturnAsset,
+  isOwner = false,
+  currentAddress
+}: AssetCardProps) {
+  const [days, setDays] = useState(1);
+  const [showListModal, setShowListModal] = useState(false);
+  const [priceInput, setPriceInput] = useState('');
+
+  // Unified ID getter - works for both user assets and listed assets
+  const getAssetId = () => asset.id || asset.assetId || '';
+
+  const pricePerDay = asset.pricePerDay ? Number(asset.pricePerDay) : null;
+  const priceInSUI = pricePerDay ? pricePerDay / 1_000_000_000 : 0;
   const totalPrice = priceInSUI * days;
 
-  // Kalan süreyi hesapla (kiralanan asset için)
-  const getRemainingTime = () => {
-    if (!asset.rentedUntil) return null;
+  const handleListClick = () => {
+    setShowListModal(true);
+  };
+
+  const handleListSubmit = async () => {
+    if (onList && priceInput) {
+      const priceInMist = (parseFloat(priceInput) * 1_000_000_000).toString();
+      await onList(getAssetId(), asset.type, priceInMist);
+      setShowListModal(false);
+      setPriceInput('');
+    }
+  };
+
+  const handleRentClick = async () => {
+    if (onRent && pricePerDay) {
+      const totalPriceInMist = (pricePerDay * days).toString();
+      await onRent(getAssetId(), asset.type, days, totalPriceInMist);
+    }
+  };
+
+  const getRemainingTime = (): string => {
+    if (!asset.rentedUntil) return '';
     
     const now = Date.now();
-    const remaining = asset.rentedUntil - now;
+    const rentedUntil = Number(asset.rentedUntil);
+    const remaining = rentedUntil - now;
     
     if (remaining <= 0) return 'Expired';
     
@@ -38,173 +85,143 @@ export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, 
     return `${hours}h remaining`;
   };
 
-  const handleListClick = () => {
-    // Fiyat girişi için basit bir prompt kullanıyoruz.
-    // İdealde bu daha gelişmiş bir modal penceresi olmalıdır.
-    const rentPrice = prompt("Enter the daily rental price in SUI:");
-    if (rentPrice && !isNaN(parseFloat(rentPrice)) && onListForRent) {
-      onListForRent(asset.id, asset.type, rentPrice);
-    } else if (rentPrice !== null) {
-      alert("Please enter a valid number for the price.");
-    }
-  };
-
-  const handleRentClick = () => {
-    // TODO: Kiralama süresi girişi yap ve onRent'i çağır
-    console.log(`Renting asset ${asset.id} for ${days} day(s).`);
-    if (onRent) {
-      onRent(asset.id, asset.type, days);
-    }
-  };
-
   return (
-    <div className="border rounded-lg overflow-hidden shadow-lg bg-white">
-      <div className="relative w-full h-56 bg-gray-200">
-        {!imageError && asset.url ? (
-          <Image
-            src={asset.url}
-            alt={asset.name}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover"
-            onError={() => setImageError(true)}
-            unoptimized={asset.url.includes('ipfs') || asset.url.includes('blob')}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200">
-            <div className="text-center">
-              <svg
-                className="mx-auto h-12 w-12 text-gray-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              <p className="mt-2 text-xs text-gray-500">No Image</p>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="p-4">
-        <h3 className="text-lg font-bold">{asset.name}</h3>
-        <p className="text-sm text-gray-600 mt-1 truncate">{asset.description}</p>
-        
-        {/* Kiralanan asset için kalan süreyi göster */}
-        {asset.rentedUntil && (
-          <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
-            <p className="text-xs font-semibold text-blue-700">
-              ⏰ {getRemainingTime()}
-            </p>
-            {asset.owner && (
-              <p className="text-xs text-gray-500 mt-1 truncate">
-                Owner: {asset.owner.slice(0, 6)}...{asset.owner.slice(-4)}
-              </p>
+    <>
+      <BackgroundGradient className="rounded-[22px] max-w-sm p-4 sm:p-10 bg-white dark:bg-zinc-900 h-full flex flex-col">
+        <div className="flex flex-col h-full">
+          <div className="relative w-full h-48 bg-neutral-100 dark:bg-zinc-800 rounded-xl overflow-hidden shrink-0">
+            {asset.url ? (
+              <img src={asset.url} alt={asset.name} className="w-full h-full object-contain" />
+            ) : (
+              <div className="flex items-center justify-center h-full text-neutral-400 dark:text-zinc-600">No Image</div>
             )}
           </div>
-        )}
-        
-        {/* Fiyat bilgisini göster (eğer kiracı görünümündeyse) */}
-        {!isOwner && !asset.rentedUntil && pricePerDay && (
-          <p className="text-md font-semibold mt-2 text-blue-600">
-            {priceInSUI.toFixed(2)} SUI/day
-          </p>
-        )}
 
-        <div className="mt-4">
-          {isOwner ? (
-            // Varlık sahibi için butonlar
-            <div>
-              <button 
-                onClick={handleListClick}
-                className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition-colors"
-              >
-                List for Rent
-              </button>
-            </div>
-          ) : onClaimBack ? (
-            // Listelenmiş asset için Claim Back butonu
-            <div>
-              {asset.isRented ? (
-                <div className="text-center">
-                  <div className="mb-2 p-2 bg-yellow-50 rounded border border-yellow-200">
-                    <p className="text-xs font-semibold text-yellow-700">🔒 Currently Rented</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {asset.renter && `By: ${asset.renter.slice(0, 6)}...${asset.renter.slice(-4)}`}
-                    </p>
-                  </div>
-                  <button 
-                    disabled
-                    className="w-full bg-gray-300 text-gray-500 py-2 rounded cursor-not-allowed"
-                  >
-                    Cannot Claim (Rented)
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => onClaimBack(asset.id, asset.type)}
-                  className="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600 transition-colors"
-                >
-                  Claim Back
-                </button>
+          <div className="mt-4 grow">
+            <h3 className="text-base sm:text-xl font-bold text-black mb-2 dark:text-neutral-200">{asset.name}</h3>
+            {asset.description && (
+              <p className="text-sm text-neutral-600 dark:text-neutral-400 line-clamp-2 min-h-10">{asset.description}</p>
+            )}
+          </div>
+
+          {asset.rentedUntil && (
+            <div className="mt-3 px-3 py-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg border border-blue-500/20">
+              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">⏰ {getRemainingTime()}</p>
+              {asset.owner && (
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">Owner: {asset.owner.slice(0, 6)}...{asset.owner.slice(-4)}</p>
               )}
-            </div>
-          ) : asset.rentedUntil && onReturnAsset ? (
-            // Kiralanan asset için Return Asset butonu
-            <div className="text-center">
-              {/* Süre kontrolü */}
-              {getRemainingTime() === 'Expired' ? (
-                <button 
-                  onClick={() => onReturnAsset(asset.id, asset.type)}
-                  className="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 transition-colors"
-                >
-                  Return Asset
-                </button>
-              ) : (
-                <div className="text-sm text-gray-500">
-                  <p className="mb-2">Currently using this asset</p>
-                  <p className="text-xs text-gray-400">Can return after rental period ends</p>
-                </div>
-              )}
-            </div>
-          ) : asset.rentedUntil ? (
-            // Kiralanan asset için bilgi (return fonksiyonu yok)
-            <div className="text-center text-sm text-gray-500">
-              <p>Currently using this asset</p>
-            </div>
-          ) : (
-            // Kiracı için butonlar (marketplace'te)
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Days:</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={days}
-                  onChange={(e) => setDays(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-20 px-2 py-1 border rounded"
-                />
-              </div>
-              {pricePerDay && (
-                <p className="text-sm text-gray-600">
-                  Total: <span className="font-semibold">{totalPrice.toFixed(2)} SUI</span>
-                </p>
-              )}
-              <button 
-                onClick={handleRentClick}
-                className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors"
-              >
-                Rent Now
-              </button>
             </div>
           )}
+
+          {!isOwner && !asset.rentedUntil && pricePerDay && (
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-sm text-neutral-600 dark:text-neutral-400">Price per day</span>
+              <span className="text-lg font-bold text-black dark:text-white">{priceInSUI.toFixed(2)} SUI</span>
+            </div>
+          )}
+
+          <div className="mt-4">
+            {isOwner ? (
+              <button onClick={handleListClick} className="rounded-full w-full py-2.5 text-white font-semibold bg-black dark:bg-zinc-800 hover:opacity-90 transition-opacity">
+                List for Rent
+              </button>
+            ) : onClaimBack ? (
+              <div>
+                {asset.isRented ? (
+                  <div>
+                    <div className="mb-3 px-3 py-2 bg-amber-500/10 dark:bg-amber-500/20 rounded-lg border border-amber-500/20">
+                      <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">🔒 Currently Rented</p>
+                      {asset.renter && (
+                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">By: {asset.renter.slice(0, 6)}...{asset.renter.slice(-4)}</p>
+                      )}
+                    </div>
+                    <button disabled className="rounded-full w-full py-2.5 text-neutral-400 font-semibold bg-neutral-200 dark:bg-zinc-700 cursor-not-allowed">
+                      Cannot Claim (Rented)
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => onClaimBack(getAssetId(), asset.type)} className="rounded-full w-full py-2.5 text-white font-semibold bg-purple-600 hover:bg-purple-700 transition-colors">
+                    Claim Back
+                  </button>
+                )}
+              </div>
+            ) : asset.rentedUntil && onReturnAsset ? (
+              <div>
+                {getRemainingTime() === 'Expired' ? (
+                  <button onClick={() => onReturnAsset(getAssetId(), asset.type)} className="rounded-full w-full py-2.5 text-white font-semibold bg-orange-600 hover:bg-orange-700 transition-colors">
+                    Return Asset
+                  </button>
+                ) : (
+                  <div className="text-center text-sm text-neutral-600 dark:text-neutral-400">
+                    <p className="font-medium">Currently using this asset</p>
+                    <p className="text-xs mt-1 text-neutral-500">Can return after rental period ends</p>
+                  </div>
+                )}
+              </div>
+            ) : asset.rentedUntil ? (
+              <div className="text-center text-sm text-neutral-600 dark:text-neutral-400 font-medium">Currently using this asset</div>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Days:</label>
+                  <input type="number" min="1" value={days} onChange={(e) => setDays(Math.max(1, parseInt(e.target.value) || 1))} className="flex-1 px-3 py-1.5 border border-neutral-300 dark:border-zinc-600 rounded-lg bg-white dark:bg-zinc-800 text-black dark:text-white" />
+                </div>
+                {pricePerDay && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-neutral-600 dark:text-neutral-400">Total Price:</span>
+                    <span className="font-bold text-black dark:text-white">{totalPrice.toFixed(2)} SUI</span>
+                  </div>
+                )}
+                <button onClick={handleRentClick} className="rounded-full w-full py-2.5 text-white font-semibold bg-emerald-600 hover:bg-emerald-700 transition-colors">
+                  Rent Now
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </BackgroundGradient>
+
+      {showListModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full shadow-2xl border border-neutral-200 dark:border-zinc-800">
+            <div className="p-6 sm:p-8">
+              <h3 className="text-2xl font-bold mb-6 bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                List Asset for Rent
+              </h3>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold mb-3 text-neutral-700 dark:text-neutral-300">
+                    Price per day (SUI)
+                  </label>
+                  <input 
+                    type="number" 
+                    step="0.1" 
+                    value={priceInput} 
+                    onChange={(e) => setPriceInput(e.target.value)} 
+                    className="w-full px-4 py-3 border-2 border-neutral-300 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 text-black dark:text-white focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none text-lg font-medium" 
+                    placeholder="0.1"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={handleListSubmit} 
+                    className="flex-1 bg-linear-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all font-semibold shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                  >
+                    Confirm
+                  </button>
+                  <button 
+                    onClick={() => { setShowListModal(false); setPriceInput(''); }} 
+                    className="flex-1 bg-neutral-200 dark:bg-zinc-800 text-black dark:text-white py-3 rounded-xl hover:bg-neutral-300 dark:hover:bg-zinc-700 transition-all font-semibold border-2 border-neutral-300 dark:border-zinc-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

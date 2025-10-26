@@ -27,7 +27,7 @@ export default function MyAssetsPage() {
   const { data: rentedAssets, isLoading: isLoadingRented, error: errorRented, refetch: refetchRented } = useRentedAssets(account?.address);
   const { data: listedAssets, isLoading: isLoadingListed, error: errorListed, refetch: refetchListed } = useListedByMe(account?.address);
 
-  const handleListForRent = (assetId: string, assetType: string, price: string) => {
+  const handleListForRent = async (assetId: string, assetType: string, price: string) => {
     listAsset(assetId, assetType, price).then((tx) => {
       signAndExecute(
         {
@@ -50,7 +50,7 @@ export default function MyAssetsPage() {
     });
   };
 
-  const handleClaimBack = (assetId: string, assetType: string) => {
+  const handleClaimBack = async (assetId: string, assetType: string) => {
     claimAsset(assetId, assetType).then((tx) => {
       signAndExecute(
         {
@@ -73,7 +73,7 @@ export default function MyAssetsPage() {
     });
   };
 
-  const handleReturnAsset = (assetId: string, assetType: string) => {
+  const handleReturnAsset = async (assetId: string, assetType: string) => {
     returnAsset(assetId, assetType).then((tx) => {
       signAndExecute(
         {
@@ -248,7 +248,7 @@ export default function MyAssetsPage() {
                     owner: activeTab === 'rented' ? (asset as any).owner : undefined,
                   } as any} 
                   isOwner={activeTab === 'owned'} 
-                  onListForRent={activeTab === 'owned' ? handleListForRent : undefined}
+                  onList={activeTab === 'owned' ? handleListForRent : undefined}
                   onClaimBack={activeTab === 'listed' ? handleClaimBack : undefined}
                   onReturnAsset={activeTab === 'rented' ? handleReturnAsset : undefined}
                 />
