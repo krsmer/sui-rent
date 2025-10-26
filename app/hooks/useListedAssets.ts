@@ -65,14 +65,38 @@ export default function useListedAssets() {
           }
         });
 
-        const assetFields = (assetDynamicField.data?.content?.dataType === 'moveObject' && assetDynamicField.data.content.fields) ? assetDynamicField.data.content.fields as any : {};
+        const assetData = assetDynamicField.data;
+        const assetFields = (assetData?.content?.dataType === 'moveObject' && assetData.content.fields) ? assetData.content.fields as any : {};
+        
+        // Display metadata için ayrı bir getObject çağrısı yap
+        const assetObjectId = assetData?.objectId;
+        let assetDisplay: Record<string, any> | null = null;
+        
+        if (assetObjectId) {
+          try {
+            const assetFullObject = await client.getObject({
+              id: assetObjectId,
+              options: {
+                showDisplay: true
+              }
+            });
+            assetDisplay = assetFullObject.data?.display?.data || null;
+          } catch (e) {
+            console.error("Failed to fetch display data:", e);
+          }
+        }
+
+        // Display metadata varsa onu kullan, yoksa fields'den al
+        const name = assetDisplay?.name || assetFields.name || "Unnamed Asset";
+        const description = assetDisplay?.description || assetFields.description || "No description.";
+        const url = assetDisplay?.image_url || assetDisplay?.url || assetFields.url || assetFields.image_url || "";
 
         return {
           listingId: listingObj.data!.objectId,
           assetId: listingFields.asset_id,
-          name: assetFields.name || "Unnamed Asset",
-          description: assetFields.description || "No description.",
-          url: assetFields.url || "",
+          name,
+          description,
+          url,
           pricePerDay: BigInt(listingFields.price_per_day),
           owner: listingFields.owner,
         };
