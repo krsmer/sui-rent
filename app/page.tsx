@@ -1,92 +1,146 @@
-import React from 'react'
-import SplitText from '@/components/SplitText';
-import Link from "next/link";
+import Link from "next/link"
+import { ArrowRight, Shield, Zap, Coins, TrendingUp, Users, Package } from "lucide-react"
+import SplitText from "@/components/SplitText"
+import { StatsCard } from "@/components/stats-card"
+import { FeatureCard } from "@/components/feature-card"
+import { AnimatedCounter } from "@/components/animated-counter"
+import { FadeIn } from "@/components/fade-in"
+import { StaggerContainer } from "@/components/stagger-container"
 
-const page = () => {
+export default function HomePage() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="text-center px-6 py-12 md:py-24">
-        {/* Orijinal h1'in stillerini bu div'e taşıdık ve yazıları ortalamak için 'flex' ekledik */}
-        <div className="text-5xl md:text-6xl font-extrabold text-gray-900 flex justify-center">
-          {/* 1. Kısım: "Welcome to " */}
-          <SplitText
-            text="Welcome to "
-            splitType="chars"
-            from={{ opacity: 0, y: 40 }}
-            to={{ opacity: 1, y: 0 }}
-            duration={0.6}
-            ease="power3.out"
-            textAlign="left"
-          />
-          {/* 2. Kısım: "SuiRent" (Mavi renkte) */}
-          <SplitText
-            text="SuiRent"
-            className="text-blue-600" // Mavi renk için class'ı buraya verdik
-            splitType="chars"
-            from={{ opacity: 0, y: 40 }}
-            to={{ opacity: 1, y: 0 }}
-            duration={0.6}
-            ease="power3.out"
-            textAlign="left"
-          />
-        </div>
-        <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
-          The decentralized marketplace for renting interactive assets on the Sui blockchain. Unlock the potential of your digital items or access what you need, right when you need it.
-        </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <Link 
-            href="/marketplace" 
-            className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-          >
-            Explore Marketplace
-          </Link>
-          <Link 
-            href="/my-assets" 
-            className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200"
-          >
-            List Your Assets
-          </Link>
-        </div>
-      </div>
+    <div className="flex flex-col">
+      {/* Hero Section */}
+      <section className="container flex flex-col items-center justify-center gap-8 px-4 py-24 md:py-32 lg:py-40">
+        <div className="flex max-w-4xl flex-col items-center gap-6 text-center">
+          <FadeIn delay={100}>
+            <div className="inline-flex items-center rounded-full border border-border bg-muted px-4 py-1.5 text-sm text-muted-foreground">
+              <Zap className="mr-2 h-3 w-3" />
+              Powered by SuiRent
+            </div>
+          </FadeIn>
 
-      <div className="w-full bg-white py-12 md:py-20">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-            <div className="feature">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mx-auto">
-                {/* Placeholder for an icon */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" /></svg>
-              </div>
-              <h3 className="mt-5 text-lg font-medium text-gray-900">Earn Passive Income</h3>
-              <p className="mt-2 text-base text-gray-500">
-                Put your idle digital assets to work. List them for rent and generate a steady stream of income securely.
-              </p>
+          <SplitText
+            text="Rent NFTs Without Buying Them"
+            tag="h1"
+            className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
+            splitType="words"
+            delay={50}
+          />
+
+          <FadeIn delay={300}>
+            <p className="max-w-2xl text-lg text-muted-foreground leading-relaxed md:text-xl">
+              Access valuable digital assets temporarily. Earn passive income from your NFTs. All secured by smart
+              contracts on Sui blockchain.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={400}>
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <Link
+                href="/marketplace"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                Browse Marketplace
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/my-assets"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-6 py-3 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                List Your Assets
+              </Link>
             </div>
-            <div className="feature">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mx-auto">
-                {/* Placeholder for an icon */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-4a6 6 0 016-6h4a6 6 0 016 6z" /></svg>
-              </div>
-              <h3 className="mt-5 text-lg font-medium text-gray-900">Rent with Ease</h3>
-              <p className="mt-2 text-base text-gray-500">
-                Access powerful in-game items, digital art, or utility NFTs for a fraction of the cost, for exactly as long as you need.
-              </p>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="border-t border-border/40 bg-muted/30 py-16 md:py-24">
+        <div className="container px-4">
+          <FadeIn>
+            <div className="mb-12 text-center">
+              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Platform Statistics</h2>
+              <p className="mt-2 text-muted-foreground">Real-time metrics from our growing marketplace</p>
             </div>
-            <div className="feature">
-              <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white mx-auto">
-                {/* Placeholder for an icon */}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
-              </div>
-              <h3 className="mt-5 text-lg font-medium text-gray-900">Secure & Decentralized</h3>
-              <p className="mt-2 text-base text-gray-500">
-                Powered by Sui's object-centric model, all rentals are managed by smart contracts, ensuring trust and security.
-              </p>
+          </FadeIn>
+          <StaggerContainer staggerDelay={100} className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <StatsCard
+              title="Total NFTs Listed"
+              value={<AnimatedCounter value={1247} />}
+              icon={Package}
+              trend={{ value: "12%", isPositive: true }}
+            />
+            <StatsCard
+              title="Active Rentals"
+              value={<AnimatedCounter value={342} />}
+              icon={TrendingUp}
+              trend={{ value: "8%", isPositive: true }}
+            />
+            <StatsCard
+              title="Total Users"
+              value={<AnimatedCounter value={5823} />}
+              icon={Users}
+              trend={{ value: "23%", isPositive: true }}
+            />
+            <StatsCard
+              title="Volume (SUI)"
+              value={<AnimatedCounter value={12450} suffix=" SUI" />}
+              icon={Coins}
+              trend={{ value: "15%", isPositive: true }}
+            />
+          </StaggerContainer>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="border-t border-border/40 py-16 md:py-24">
+        <div className="container px-4">
+          <FadeIn>
+            <div className="mb-12 text-center">
+              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Why Choose SuiRent?</h2>
+              <p className="mt-2 text-muted-foreground">Everything you need for secure NFT rentals</p>
             </div>
+          </FadeIn>
+          <StaggerContainer staggerDelay={150} className="grid gap-6 md:grid-cols-3">
+            <FeatureCard
+              icon={Shield}
+              title="Secure & Trustless"
+              description="Smart contracts ensure your assets are protected. No intermediaries needed."
+            />
+            <FeatureCard
+              icon={Zap}
+              title="Fast & Efficient"
+              description="Instant rentals powered by Sui's high-performance blockchain."
+            />
+            <FeatureCard
+              icon={Coins}
+              title="Earn Passive Income"
+              description="List your idle NFTs and earn SUI tokens while others use them."
+            />
+          </StaggerContainer>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="container px-4 py-16 md:py-24">
+        <FadeIn>
+          <div className="flex flex-col items-center gap-6 rounded-2xl border border-border bg-card p-8 text-center md:p-12">
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Ready to Get Started?</h2>
+            <p className="max-w-2xl text-muted-foreground leading-relaxed md:text-lg">
+              Connect your wallet and start exploring the marketplace. Rent NFTs for gaming, events, or any temporary
+              use case.
+            </p>
+            <Link
+              href="/marketplace"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-8 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Explore Marketplace
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-        </div>
-      </div>
-    </main>
-  );
+        </FadeIn>
+      </section>
+    </div>
+  )
 }
-
-export default page
