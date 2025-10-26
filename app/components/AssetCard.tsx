@@ -9,7 +9,7 @@ interface AssetCardProps {
   isOwner: boolean; // Kartın sahibi tarafından mı görüntülendiğini belirtir
   pricePerDay?: bigint; // Günlük kiralama bedeli (MIST cinsinden, opsiyonel)
   onListForRent?: (assetId: string, assetType: string, price: string) => void; // Kiraya verme fonksiyonu
-  onRent?: (assetId: string, days: number) => void; // Kiralama fonksiyonu
+  onRent?: (assetId: string, assetType: string, days: number) => void; // Kiralama fonksiyonu - assetType eklendi
   onClaimBack?: (assetId: string, assetType: string) => void; // Geri çekme fonksiyonu
   onReturnAsset?: (assetId: string, assetType: string) => void; // İade fonksiyonu (kiracı için)
 }
@@ -53,7 +53,7 @@ export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, 
     // TODO: Kiralama süresi girişi yap ve onRent'i çağır
     console.log(`Renting asset ${asset.id} for ${days} day(s).`);
     if (onRent) {
-      onRent(asset.id, days);
+      onRent(asset.id, asset.type, days);
     }
   };
 

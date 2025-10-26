@@ -16,7 +16,7 @@ export default function MarketplacePage() {
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const { rentAsset } = useMarketplace();
 
-  const handleRent = (assetId: string, days: number) => {
+  const handleRent = (assetId: string, assetType: string, days: number) => {
     // assetId buraya geldiğinde aslında asset'in gerçek ID'si
     const listing = listedAssets?.find(la => la.assetId === assetId);
     if (!listing) {
@@ -27,7 +27,7 @@ export default function MarketplacePage() {
     const pricePerDayInSUI = Number(listing.pricePerDay) / 1_000_000_000;
     const totalPrice = (pricePerDayInSUI * days).toFixed(9); // Yüksek hassasiyet
 
-    rentAsset(assetId, days, totalPrice).then((tx) => {
+    rentAsset(assetId, assetType, days, totalPrice).then((tx) => {
       signAndExecute(
         {
           transaction: tx,
@@ -78,7 +78,8 @@ export default function MarketplacePage() {
     name: la.name,
     description: la.description,
     url: la.url,
-    owner: '',
+    owner: la.owner,
+    type: la.type, // Asset tipi eklendi
     pricePerDay: la.pricePerDay,
     listingId: la.listingId,
   })) || [];

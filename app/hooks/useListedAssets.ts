@@ -15,6 +15,7 @@ export interface ListedAsset {
   url: string;
   pricePerDay: bigint;
   owner: string;
+  type: string; // Varlığın tam Move tipi
 }
 
 /**
@@ -90,6 +91,7 @@ export default function useListedAssets() {
         const name = assetDisplay?.name || assetFields.name || "Unnamed Asset";
         const description = assetDisplay?.description || assetFields.description || "No description.";
         const url = assetDisplay?.image_url || assetDisplay?.url || assetFields.url || assetFields.image_url || "";
+        const assetType = assetData?.content?.dataType === 'moveObject' ? assetData.content.type || "" : "";
 
         return {
           listingId: listingObj.data!.objectId,
@@ -99,6 +101,7 @@ export default function useListedAssets() {
           url,
           pricePerDay: BigInt(listingFields.price_per_day),
           owner: listingFields.owner,
+          type: assetType,
         };
       });
 

@@ -8,6 +8,9 @@ module marketplace::marketplace {
     use sui::object::{Self, ID, UID};
     use sui::event;
     use sui::dynamic_object_field as dof;
+    use std::string::{Self, String};
+    use sui::package;
+    use sui::display;
 
     /// The main shared object for the marketplace
     struct Marketplace has key {
@@ -26,6 +29,22 @@ module marketplace::marketplace {
         earned_amount: u64, // Total earnings accumulated from rentals
     }
 
+    /// Rental receipt - given to renter as proof of rental
+    /// This NFT appears in renter's wallet and can be used on other platforms
+    struct RentalReceipt has key, store {
+        id: UID,
+        asset_id: ID,          // Original asset ID
+        asset_type: String,     // Type string of the original asset
+        listing_id: ID,        // Reference to the listing
+        owner: address,        // Original asset owner
+        renter: address,       // Who rented it
+        rented_until: u64,     // When rental expires
+        price_paid: u64,       // Amount paid for rental
+    }
+
+    /// One-Time-Witness for the module
+    struct MARKETPLACE has drop {}
+
     // Events
     struct AssetListed has copy, drop {
         asset_id: ID,
@@ -34,12 +53,16 @@ module marketplace::marketplace {
     }
 
     /// Executed once during module publish
-    fun init(ctx: &mut TxContext) {
+    fun init(otw: MARKETPLACE, ctx: &mut TxContext) {
         let marketplace = Marketplace {
             id: object::new(ctx),
-            balance: balance::zero() // Corrected: removed ctx
+            balance: balance::zero()
         };
         transfer::share_object(marketplace);
+
+        // Create Publisher for display capabilities
+        let publisher = package::claim(otw, ctx);
+        transfer::public_transfer(publisher, tx_context::sender(ctx));
     }
 
     /// List an asset for rent on the marketplace
@@ -77,7 +100,8 @@ module marketplace::marketplace {
     /// Rent an asset from the marketplace
     /// Error: Cannot rent your own asset (ERR_OWNER_CANNOT_RENT = 1)
     /// Asset is transferred to renter, and will automatically return to owner after rental period
-    public fun rent_asset(
+    /// Renter receives a RentalReceipt NFT as proof
+    public fun rent_asset<T: key + store>(
         marketplace: &mut Marketplace,
         asset_id: ID,
         payment: coin::Coin<SUI>,
@@ -109,8 +133,24 @@ module marketplace::marketplace {
         
         // Kiralama bilgilerini güncelle
         let rental_duration_ms = rental_days * 86400000; // days to milliseconds
-        listing.rented_until = current_time + rental_duration_ms;
-        listing.renter = tx_context::sender(ctx);
+        let rental_end = current_time + rental_duration_ms;
+        listing.rented_until = rental_end;
+        let renter = tx_context::sender(ctx);
+        listing.renter = renter;
+        
+        // Create and send RentalReceipt to renter
+        let receipt = RentalReceipt {
+            id: object::new(ctx),
+            asset_id: asset_id,
+            asset_type: string::utf8(b"Generic NFT"), // Type info can be customized
+            listing_id: object::uid_to_inner(&listing.id),
+            owner: listing.owner,
+            renter: renter,
+            rented_until: rental_end,
+            price_paid: total_price,
+        };
+        
+        transfer::public_transfer(receipt, renter);
         
         // Asset remains in listing, will be returned to owner via return_asset function
     }
@@ -197,6 +237,30 @@ module marketplace::marketplace {
         transfer::public_transfer(asset, owner);
 
         // Listing objesini yok et
+        object::delete(id);
+    }
+
+    /// Burn a rental receipt after rental period ends
+    /// Renter can burn the receipt to clean up their wallet
+    public fun burn_receipt(
+        receipt: RentalReceipt,
+        clock: &Clock,
+    ) {
+        let RentalReceipt {
+            id,
+            asset_id: _,
+            asset_type: _,
+            listing_id: _,
+            owner: _,
+            renter: _,
+            rented_until,
+            price_paid: _,
+        } = receipt;
+
+        // Kiralama süresi bitmiş olmalı
+        let current_time = clock::timestamp_ms(clock);
+        assert!(rented_until <= current_time, 7); // ERR_RENTAL_NOT_ENDED
+
         object::delete(id);
     }
 }

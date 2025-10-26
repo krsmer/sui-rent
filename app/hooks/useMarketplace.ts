@@ -39,11 +39,12 @@ export function useMarketplace() {
   /**
    * Bir varlığı belirli bir süre için kiralar.
    * @param assetId Kiralanacak asset'in ID'si.
+   * @param assetType Varlığın tam Move tipi
    * @param days Kiralama süresi (gün cinsinden).
    * @param totalPrice Toplam kiralama bedeli (SUI cinsinden).
    * @returns Transaction nesnesi.
    */
-  const rentAsset = async (assetId: string, days: number, totalPrice: string) => {
+  const rentAsset = async (assetId: string, assetType: string, days: number, totalPrice: string) => {
     const totalPriceInMIST = BigInt(parseFloat(totalPrice) * 1_000_000_000);
     const tx = new Transaction();
 
@@ -52,6 +53,7 @@ export function useMarketplace() {
 
     tx.moveCall({
       target: `${PACKAGE_ID}::marketplace::rent_asset`,
+      typeArguments: [assetType], // Generic tip argümanı
       arguments: [
         tx.object(MARKETPLACE_ID),      // marketplace: &mut Marketplace
         tx.pure.id(assetId),             // asset_id: ID
