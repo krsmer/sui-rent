@@ -24,7 +24,8 @@ export default function MarketplacePage() {
       return;
     }
 
-    rentAsset(assetId, assetType, days, totalPrice).then((tx) => {
+    // rentAsset'e listing.listingId göndermemiz lazım çünkü Move contract'ta bu ID ile listing bulunuyor
+    rentAsset(listing.listingId, assetType, days, totalPrice).then((tx) => {
       signAndExecute(
         {
           transaction: tx,

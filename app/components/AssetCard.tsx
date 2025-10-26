@@ -64,8 +64,8 @@ export default function AssetCard({
 
   const handleRentClick = async () => {
     if (onRent && pricePerDay) {
-      const totalPriceInMist = (pricePerDay * days).toString();
-      await onRent(getAssetId(), asset.type, days, totalPriceInMist);
+      // totalPrice already calculated in SUI, pass it to onRent which expects SUI
+      await onRent(getAssetId(), asset.type, days, totalPrice.toString());
     }
   };
 
