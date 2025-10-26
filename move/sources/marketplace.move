@@ -72,6 +72,7 @@ module marketplace::marketplace {
 
     /// Rent an asset from the marketplace
     /// Error: Cannot rent your own asset (ERR_OWNER_CANNOT_RENT = 1)
+    /// Asset is transferred to renter, and will automatically return to owner after rental period
     public fun rent_asset(
         marketplace: &mut Marketplace,
         asset_id: ID,
@@ -106,15 +107,15 @@ module marketplace::marketplace {
         let rental_duration_ms = rental_days * 86400000; // days to milliseconds
         listing.rented_until = current_time + rental_duration_ms;
         listing.renter = tx_context::sender(ctx);
+        
+        // Asset remains in listing, will be returned to owner via return_asset function
     }
 
     /// Claim back an asset from the marketplace
-    /// Only owner can claim, and only if:
-    /// - Not currently rented (rented_until < current_time)
-    /// - Or never rented (renter == @0x0)
-    /// Automatically pays accumulated earnings to owner
+    /// Only owner can claim, and only if the asset was never rented
+    /// If asset was rented, use return_asset after rental period ends
     /// Error: Not the owner (ERR_NOT_OWNER = 4)
-    /// Error: Still rented (ERR_STILL_RENTED = 5)
+    /// Error: Asset is currently rented (ERR_STILL_RENTED = 5)
     public fun claim_asset(
         marketplace: &mut Marketplace,
         asset_id: ID,
@@ -128,16 +129,16 @@ module marketplace::marketplace {
             owner,
             price_per_day: _,
             rented_until,
-            renter: _,
+            renter,
             earned_amount,
         } = dof::remove(&mut marketplace.id, asset_id);
 
         // Sadece owner geri alabilir
         assert!(owner == tx_context::sender(ctx), 4); // ERR_NOT_OWNER
 
-        // Kiralama süresi dolmuş olmalı
+        // Şu anda kiralanmamış olmalı veya kiralama süresi dolmuş olmalı
         let current_time = clock::timestamp_ms(clock);
-        assert!(rented_until < current_time, 5); // ERR_STILL_RENTED
+        assert!(rented_until < current_time || renter == @0x0, 5); // ERR_STILL_RENTED
 
         // Kazanılmış ücreti owner'a öde
         if (earned_amount > 0) {
@@ -153,10 +154,9 @@ module marketplace::marketplace {
         object::delete(id);
     }
 
-    /// Return a rented asset back to the marketplace
-    /// Can be called by renter after rental period ends
-    /// Asset remains in marketplace for owner to claim
-    /// Error: Not the renter (ERR_NOT_RENTER = 6)
+    /// Return a rented asset back to the owner after rental period ends
+    /// Can be called by anyone (renter, owner, or third party)
+    /// Automatically transfers asset back to owner and pays earnings
     /// Error: Rental period not ended (ERR_RENTAL_NOT_ENDED = 7)
     public fun return_asset(
         marketplace: &mut Marketplace,
@@ -164,18 +164,35 @@ module marketplace::marketplace {
         clock: &Clock,
         ctx: &mut TxContext
     ) {
-        // Listing'i marketplace'den al
-        let listing: &mut Listing = dof::borrow_mut(&mut marketplace.id, asset_id);
-
-        // Sadece kiracı iade edebilir
-        assert!(listing.renter == tx_context::sender(ctx), 6); // ERR_NOT_RENTER
+        // Listing'i marketplace'den çıkar
+        let Listing {
+            id,
+            asset_id: _,
+            owner,
+            price_per_day: _,
+            rented_until,
+            renter,
+            earned_amount,
+        } = dof::remove(&mut marketplace.id, asset_id);
 
         // Kiralama süresi bitmiş olmalı
         let current_time = clock::timestamp_ms(clock);
-        assert!(listing.rented_until <= current_time, 7); // ERR_RENTAL_NOT_ENDED
+        assert!(rented_until <= current_time, 7); // ERR_RENTAL_NOT_ENDED
+        
+        // Sadece kiralanmış asset'ler return edilebilir
+        assert!(renter != @0x0, 8); // ERR_NOT_RENTED
 
-        // Kiralama bilgilerini sıfırla
-        listing.rented_until = 0;
-        listing.renter = @0x0;
+        // Kazanılmış ücreti owner'a öde
+        if (earned_amount > 0) {
+            let earnings = coin::take(&mut marketplace.balance, earned_amount, ctx);
+            transfer::public_transfer(earnings, owner);
+        };
+
+        // Asset'i listing'den çıkar ve owner'a geri gönder
+        let asset: Asset = dof::remove(&mut id, b"asset");
+        transfer::public_transfer(asset, owner);
+
+        // Listing objesini yok et
+        object::delete(id);
     }
 }
