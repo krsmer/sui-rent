@@ -15,6 +15,7 @@ export interface RentedAsset {
   rentedUntil: number; // timestamp in milliseconds
   pricePerDay: string;
   owner: string;
+  type: string; // Asset'in tam Move tipi
 }
 
 export default function useRentedAssets(address?: string) {
@@ -78,6 +79,7 @@ export default function useRentedAssets(address?: string) {
                 "fields" in assetFields.data.content
               ) {
                 const asset = assetFields.data.content.fields as any;
+                const assetType = assetFields.data?.content?.dataType === 'moveObject' ? assetFields.data.content.type || "" : "";
                 
                 // Display metadata için ayrı bir getObject çağrısı yap
                 const assetObjectId = assetFields.data?.objectId;
@@ -111,6 +113,7 @@ export default function useRentedAssets(address?: string) {
                   rentedUntil: Number(listing.rented_until),
                   pricePerDay: listing.price_per_day,
                   owner: listing.owner,
+                  type: assetType,
                 });
               }
             }

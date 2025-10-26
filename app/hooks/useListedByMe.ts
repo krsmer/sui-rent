@@ -15,6 +15,7 @@ export interface ListedAsset {
   isRented: boolean;
   rentedUntil: number; // timestamp in milliseconds
   renter: string;
+  type: string; // Asset'in tam Move tipi
 }
 
 export default function useListedByMe(address?: string) {
@@ -78,6 +79,7 @@ export default function useListedByMe(address?: string) {
                 "fields" in assetFields.data.content
               ) {
                 const asset = assetFields.data.content.fields as any;
+                const assetType = assetFields.data?.content?.dataType === 'moveObject' ? assetFields.data.content.type || "" : "";
                 
                 // Display metadata için ayrı bir getObject çağrısı yap
                 const assetObjectId = assetFields.data?.objectId;
@@ -115,6 +117,7 @@ export default function useListedByMe(address?: string) {
                   isRented,
                   rentedUntil: Number(listing.rented_until),
                   renter: listing.renter,
+                  type: assetType,
                 });
               }
             }
