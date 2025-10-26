@@ -97,9 +97,31 @@ export function useMarketplace() {
     return tx;
   };
 
+  /**
+   * Kiralanan bir varlığı marketplace'e geri iade eder.
+   * Sadece kiracı çağırabilir ve kiralama süresi dolmuş olmalı.
+   * @param assetId İade edilecek asset'in ID'si.
+   * @returns Transaction nesnesi.
+   */
+  const returnAsset = async (assetId: string) => {
+    const tx = new Transaction();
+
+    tx.moveCall({
+      target: `${PACKAGE_ID}::marketplace::return_asset`,
+      arguments: [
+        tx.object(MARKETPLACE_ID),       // marketplace: &mut Marketplace
+        tx.pure.id(assetId),              // asset_id: ID
+        tx.object(SUI_CLOCK_OBJECT_ID),  // clock: &Clock
+      ],
+    });
+
+    return tx;
+  };
+
   return {
     listAsset,
     rentAsset,
     claimAsset,
+    returnAsset,
   };
 }

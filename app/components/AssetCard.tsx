@@ -11,9 +11,10 @@ interface AssetCardProps {
   onListForRent?: (assetId: string, price: string) => void; // Kiraya verme fonksiyonu
   onRent?: (assetId: string, days: number) => void; // Kiralama fonksiyonu
   onClaimBack?: (assetId: string) => void; // Geri çekme fonksiyonu
+  onReturnAsset?: (assetId: string) => void; // İade fonksiyonu (kiracı için)
 }
 
-export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, onRent, onClaimBack }: AssetCardProps) {
+export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, onRent, onClaimBack, onReturnAsset }: AssetCardProps) {
   const [days, setDays] = useState(1);
 
   // Fiyatı SUI cinsine çevir (1 SUI = 1,000,000,000 MIST)
@@ -129,8 +130,26 @@ export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, 
                 </button>
               )}
             </div>
+          ) : asset.rentedUntil && onReturnAsset ? (
+            // Kiralanan asset için Return Asset butonu
+            <div className="text-center">
+              {/* Süre kontrolü */}
+              {getRemainingTime() === 'Expired' ? (
+                <button 
+                  onClick={() => onReturnAsset(asset.id)}
+                  className="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 transition-colors"
+                >
+                  Return Asset
+                </button>
+              ) : (
+                <div className="text-sm text-gray-500">
+                  <p className="mb-2">Currently using this asset</p>
+                  <p className="text-xs text-gray-400">Can return after rental period ends</p>
+                </div>
+              )}
+            </div>
           ) : asset.rentedUntil ? (
-            // Kiralanan asset için bilgi (aksiyona gerek yok henüz)
+            // Kiralanan asset için bilgi (return fonksiyonu yok)
             <div className="text-center text-sm text-gray-500">
               <p>Currently using this asset</p>
             </div>

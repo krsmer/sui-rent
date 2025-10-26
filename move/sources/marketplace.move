@@ -139,4 +139,30 @@ module marketplace::marketplace {
         // Listing objesini yok et
         object::delete(id);
     }
+
+    /// Return a rented asset back to the marketplace
+    /// Can be called by renter after rental period ends
+    /// Asset remains in marketplace for owner to claim
+    /// Error: Not the renter (ERR_NOT_RENTER = 6)
+    /// Error: Rental period not ended (ERR_RENTAL_NOT_ENDED = 7)
+    public fun return_asset(
+        marketplace: &mut Marketplace,
+        asset_id: ID,
+        clock: &Clock,
+        ctx: &mut TxContext
+    ) {
+        // Listing'i marketplace'den al
+        let listing: &mut Listing = dof::borrow_mut(&mut marketplace.id, asset_id);
+
+        // Sadece kiracı iade edebilir
+        assert!(listing.renter == tx_context::sender(ctx), 6); // ERR_NOT_RENTER
+
+        // Kiralama süresi bitmiş olmalı
+        let current_time = clock::timestamp_ms(clock);
+        assert!(listing.rented_until <= current_time, 7); // ERR_RENTAL_NOT_ENDED
+
+        // Kiralama bilgilerini sıfırla
+        listing.rented_until = 0;
+        listing.renter = @0x0;
+    }
 }

@@ -13,7 +13,7 @@ type TabType = 'owned' | 'rented' | 'listed';
 export default function MyAssetsPage() {
   const account = useCurrentAccount();
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
-  const { listAsset, claimAsset } = useMarketplace();
+  const { listAsset, claimAsset, returnAsset } = useMarketplace();
   const [activeTab, setActiveTab] = useState<TabType>('owned');
   
   console.log("🔐 Current account:", account);
@@ -69,6 +69,29 @@ export default function MyAssetsPage() {
     });
   };
 
+  const handleReturnAsset = (assetId: string) => {
+    returnAsset(assetId).then((tx) => {
+      signAndExecute(
+        {
+          transaction: tx,
+        },
+        {
+          onSuccess: (result) => {
+            console.log("Asset returned successfully:", result);
+            alert("Asset returned to marketplace!");
+            // Varlıkları yeniden yükle
+            refetchRented();
+            refetchListed();
+          },
+          onError: (error) => {
+            console.error("Error returning asset:", error);
+            alert("Error returning asset. Make sure rental period has ended.");
+          },
+        }
+      );
+    });
+  };
+
   const isLoading = activeTab === 'owned' ? isLoadingOwned : activeTab === 'rented' ? isLoadingRented : isLoadingListed;
   const error = activeTab === 'owned' ? errorOwned : activeTab === 'rented' ? errorRented : errorListed;
   const currentAssets = activeTab === 'owned' ? ownedAssets : activeTab === 'rented' ? rentedAssets : listedAssets;
@@ -111,38 +134,38 @@ export default function MyAssetsPage() {
         <div className="inline-flex rounded-lg border border-gray-200 bg-white p-1">
           <button
             onClick={() => setActiveTab('owned')}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
+            className={`px-6 py-2 rounded-md cursor-pointer font-medium transition-colors ${
               activeTab === 'owned'
                 ? 'bg-blue-500 text-white'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Sahip Olduklarım
+             Owned Assets
           </button>
           <button
             onClick={() => setActiveTab('listed')}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
+            className={`px-6 py-2 rounded-md cursor-pointer font-medium transition-colors ${
               activeTab === 'listed'
                 ? 'bg-blue-500 text-white'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Listelediklerim
+             Listed Assets
           </button>
           <button
             onClick={() => setActiveTab('rented')}
-            className={`px-6 py-2 rounded-md font-medium transition-colors ${
+            className={`px-6 py-2 rounded-md cursor-pointer font-medium transition-colors ${
               activeTab === 'rented'
                 ? 'bg-blue-500 text-white'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            Kiraladıklarım
+             Rented Assets
           </button>
         </div>
       </div>
       
-      <div className="bg-gray-100 p-4 rounded mb-4 text-sm">
+      <div className="bg-gray-100 cursor-pointer p-4 rounded mb-4 text-sm">
         <p><strong>Wallet:</strong> {account.address}</p>
         <p><strong>Assets found:</strong> {currentAssets?.length || 0}</p>
         <p><strong>Tab:</strong> {activeTab === 'owned' ? 'Owned' : activeTab === 'listed' ? 'Listed' : 'Rented'}</p>
@@ -153,10 +176,15 @@ export default function MyAssetsPage() {
             {currentAssets.map((asset) => (
               <AssetCard 
                 key={asset.id} 
-                asset={asset as any} 
+                asset={{
+                  ...asset,
+                  rentedUntil: activeTab === 'rented' ? (asset as any).rentedUntil : (activeTab === 'listed' ? (asset as any).rentedUntil : undefined),
+                  owner: activeTab === 'rented' ? (asset as any).owner : undefined,
+                } as any} 
                 isOwner={activeTab === 'owned'} 
                 onListForRent={activeTab === 'owned' ? handleListForRent : undefined}
                 onClaimBack={activeTab === 'listed' ? handleClaimBack : undefined}
+                onReturnAsset={activeTab === 'rented' ? handleReturnAsset : undefined}
               />
             ))}
           </div>
