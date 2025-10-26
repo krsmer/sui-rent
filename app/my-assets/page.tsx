@@ -27,8 +27,8 @@ export default function MyAssetsPage() {
   const { data: rentedAssets, isLoading: isLoadingRented, error: errorRented, refetch: refetchRented } = useRentedAssets(account?.address);
   const { data: listedAssets, isLoading: isLoadingListed, error: errorListed, refetch: refetchListed } = useListedByMe(account?.address);
 
-  const handleListForRent = (assetId: string, price: string) => {
-    listAsset(assetId, price).then((tx) => {
+  const handleListForRent = (assetId: string, assetType: string, price: string) => {
+    listAsset(assetId, assetType, price).then((tx) => {
       signAndExecute(
         {
           transaction: tx,
@@ -50,8 +50,8 @@ export default function MyAssetsPage() {
     });
   };
 
-  const handleClaimBack = (assetId: string) => {
-    claimAsset(assetId).then((tx) => {
+  const handleClaimBack = (assetId: string, assetType: string) => {
+    claimAsset(assetId, assetType).then((tx) => {
       signAndExecute(
         {
           transaction: tx,
@@ -73,8 +73,8 @@ export default function MyAssetsPage() {
     });
   };
 
-  const handleReturnAsset = (assetId: string) => {
-    returnAsset(assetId).then((tx) => {
+  const handleReturnAsset = (assetId: string, assetType: string) => {
+    returnAsset(assetId, assetType).then((tx) => {
       signAndExecute(
         {
           transaction: tx,

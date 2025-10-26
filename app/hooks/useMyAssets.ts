@@ -15,6 +15,7 @@ export interface Asset {
   description: string;
   url: string;
   owner: string;
+  type: string; // Varlığın tam Move tipi (generic fonksiyonlar için gerekli)
   kioskId?: string; // Varlık bir Kiosk içindeyse
 }
 
@@ -91,8 +92,9 @@ export default function useMyAssets(ownerAddress?: string) {
         const obj = response.data!;
         const fields = (obj.content?.dataType === 'moveObject' && obj.content.fields) ? obj.content.fields as any : {};
         const display = obj.display?.data;
+        const objectType = obj.type || "unknown";
         
-        console.log("🎨 Object:", obj.objectId, "Fields:", fields, "Display:", display);
+        console.log("🎨 Object:", obj.objectId, "Type:", objectType, "Fields:", fields, "Display:", display);
         
         // Display data varsa öncelikle onu kullan (standart NFT formatı)
         if (display) {
@@ -101,6 +103,7 @@ export default function useMyAssets(ownerAddress?: string) {
             name: display.name || fields.name || "Unnamed Asset",
             description: display.description || fields.description || "No description.",
             url: display.image_url || display.url || fields.url || fields.image_url || "",
+            type: objectType,
             owner: ownerAddress,
           };
         }
@@ -111,6 +114,7 @@ export default function useMyAssets(ownerAddress?: string) {
           name: fields.name || "Unnamed Asset",
           description: fields.description || "No description.",
           url: fields.url || fields.image_url || "",
+          type: objectType,
           owner: ownerAddress,
         };
       });

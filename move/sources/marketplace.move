@@ -9,8 +9,6 @@ module marketplace::marketplace {
     use sui::event;
     use sui::dynamic_object_field as dof;
 
-    use marketplace::asset::Asset;
-
     /// The main shared object for the marketplace
     struct Marketplace has key {
         id: UID,
@@ -45,7 +43,13 @@ module marketplace::marketplace {
     }
 
     /// List an asset for rent on the marketplace
-    public fun list_for_rent(marketplace: &mut Marketplace, asset: Asset, price_per_day: u64, ctx: &mut TxContext) {
+    /// Generic function that accepts any object with key + store abilities
+    public fun list_for_rent<T: key + store>(
+        marketplace: &mut Marketplace, 
+        asset: T, 
+        price_per_day: u64, 
+        ctx: &mut TxContext
+    ) {
         let asset_id = object::id(&asset);
         let listing = Listing {
             id: object::new(ctx),
@@ -116,7 +120,7 @@ module marketplace::marketplace {
     /// If asset was rented, use return_asset after rental period ends
     /// Error: Not the owner (ERR_NOT_OWNER = 4)
     /// Error: Asset is currently rented (ERR_STILL_RENTED = 5)
-    public fun claim_asset(
+    public fun claim_asset<T: key + store>(
         marketplace: &mut Marketplace,
         asset_id: ID,
         clock: &Clock,
@@ -147,7 +151,7 @@ module marketplace::marketplace {
         };
 
         // Asset'i listing'den çıkar ve owner'a gönder
-        let asset: Asset = dof::remove(&mut id, b"asset");
+        let asset: T = dof::remove(&mut id, b"asset");
         transfer::public_transfer(asset, owner);
 
         // Listing objesini yok et
@@ -158,7 +162,7 @@ module marketplace::marketplace {
     /// Can be called by anyone (renter, owner, or third party)
     /// Automatically transfers asset back to owner and pays earnings
     /// Error: Rental period not ended (ERR_RENTAL_NOT_ENDED = 7)
-    public fun return_asset(
+    public fun return_asset<T: key + store>(
         marketplace: &mut Marketplace,
         asset_id: ID,
         clock: &Clock,
@@ -189,7 +193,7 @@ module marketplace::marketplace {
         };
 
         // Asset'i listing'den çıkar ve owner'a geri gönder
-        let asset: Asset = dof::remove(&mut id, b"asset");
+        let asset: T = dof::remove(&mut id, b"asset");
         transfer::public_transfer(asset, owner);
 
         // Listing objesini yok et

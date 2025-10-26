@@ -14,34 +14,22 @@ export function useMarketplace() {
   /**
    * Bir varlığı pazar yerinde kiralamak için listeler.
    * @param assetId Listelenecek varlığın object ID'si.
+   * @param assetType Varlığın tam Move tipi (örn: "0xPACKAGE::module::Type")
    * @param price Günlük kiralama bedeli (MIST cinsinden, 1 SUI = 1,000,000,000 MIST).
    * @returns Transaction nesnesi.
    */
-  const listAsset = async (assetId: string, price: string) => {
+  const listAsset = async (assetId: string, assetType: string, price: string) => {
     const priceInMIST = BigInt(parseFloat(price) * 1_000_000_000);
-    
-    // Owned object için version ve digest bilgisini al
-    const assetObject = await client.getObject({
-      id: assetId,
-      options: { showOwner: true }
-    });
-    
-    if (!assetObject.data) {
-      throw new Error("Asset not found");
-    }
 
     const tx = new Transaction();
 
     tx.moveCall({
       target: `${PACKAGE_ID}::marketplace::list_for_rent`,
+      typeArguments: [assetType], // Generic tip argümanı
       arguments: [
         tx.object(MARKETPLACE_ID), // Shared object
-        tx.objectRef({
-          objectId: assetId,
-          version: assetObject.data.version,
-          digest: assetObject.data.digest,
-        }), // Owned object with full reference
-        tx.pure.u64(priceInMIST),
+        tx.object(assetId),        // Asset object
+        tx.pure.u64(priceInMIST),  // Price per day
       ],
     });
 
@@ -80,13 +68,15 @@ export function useMarketplace() {
    * Listelenen bir varlığı geri çeker.
    * Sadece owner çağırabilir ve kiralama süresi dolmuş olmalı.
    * @param assetId Geri çekilecek asset'in ID'si.
+   * @param assetType Varlığın tam Move tipi
    * @returns Transaction nesnesi.
    */
-  const claimAsset = async (assetId: string) => {
+  const claimAsset = async (assetId: string, assetType: string) => {
     const tx = new Transaction();
 
     tx.moveCall({
       target: `${PACKAGE_ID}::marketplace::claim_asset`,
+      typeArguments: [assetType], // Generic tip argümanı
       arguments: [
         tx.object(MARKETPLACE_ID),       // marketplace: &mut Marketplace
         tx.pure.id(assetId),              // asset_id: ID
@@ -101,13 +91,15 @@ export function useMarketplace() {
    * Kiralanan bir varlığı marketplace'e geri iade eder.
    * Sadece kiracı çağırabilir ve kiralama süresi dolmuş olmalı.
    * @param assetId İade edilecek asset'in ID'si.
+   * @param assetType Varlığın tam Move tipi
    * @returns Transaction nesnesi.
    */
-  const returnAsset = async (assetId: string) => {
+  const returnAsset = async (assetId: string, assetType: string) => {
     const tx = new Transaction();
 
     tx.moveCall({
       target: `${PACKAGE_ID}::marketplace::return_asset`,
+      typeArguments: [assetType], // Generic tip argümanı
       arguments: [
         tx.object(MARKETPLACE_ID),       // marketplace: &mut Marketplace
         tx.pure.id(assetId),              // asset_id: ID

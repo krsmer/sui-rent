@@ -8,10 +8,10 @@ interface AssetCardProps {
   asset: Asset & { rentedUntil?: number; owner?: string; isRented?: boolean; renter?: string }; // extended type
   isOwner: boolean; // Kartın sahibi tarafından mı görüntülendiğini belirtir
   pricePerDay?: bigint; // Günlük kiralama bedeli (MIST cinsinden, opsiyonel)
-  onListForRent?: (assetId: string, price: string) => void; // Kiraya verme fonksiyonu
+  onListForRent?: (assetId: string, assetType: string, price: string) => void; // Kiraya verme fonksiyonu
   onRent?: (assetId: string, days: number) => void; // Kiralama fonksiyonu
-  onClaimBack?: (assetId: string) => void; // Geri çekme fonksiyonu
-  onReturnAsset?: (assetId: string) => void; // İade fonksiyonu (kiracı için)
+  onClaimBack?: (assetId: string, assetType: string) => void; // Geri çekme fonksiyonu
+  onReturnAsset?: (assetId: string, assetType: string) => void; // İade fonksiyonu (kiracı için)
 }
 
 export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, onRent, onClaimBack, onReturnAsset }: AssetCardProps) {
@@ -43,7 +43,7 @@ export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, 
     // İdealde bu daha gelişmiş bir modal penceresi olmalıdır.
     const rentPrice = prompt("Enter the daily rental price in SUI:");
     if (rentPrice && !isNaN(parseFloat(rentPrice)) && onListForRent) {
-      onListForRent(asset.id, rentPrice);
+      onListForRent(asset.id, asset.type, rentPrice);
     } else if (rentPrice !== null) {
       alert("Please enter a valid number for the price.");
     }
@@ -147,7 +147,7 @@ export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, 
                 </div>
               ) : (
                 <button 
-                  onClick={() => onClaimBack(asset.id)}
+                  onClick={() => onClaimBack(asset.id, asset.type)}
                   className="w-full bg-purple-500 text-white py-2 rounded hover:bg-purple-600 transition-colors"
                 >
                   Claim Back
@@ -160,7 +160,7 @@ export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, 
               {/* Süre kontrolü */}
               {getRemainingTime() === 'Expired' ? (
                 <button 
-                  onClick={() => onReturnAsset(asset.id)}
+                  onClick={() => onReturnAsset(asset.id, asset.type)}
                   className="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 transition-colors"
                 >
                   Return Asset
