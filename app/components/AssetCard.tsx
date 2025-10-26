@@ -22,7 +22,7 @@ interface GenericAsset {
 interface AssetCardProps {
   asset: GenericAsset;
   onList?: (assetId: string, assetType: string, price: string) => Promise<void>;
-  onRent?: (assetId: string, assetType: string, days: number, totalPrice: string) => Promise<void>;
+  onRent?: (listingId: string, assetType: string, days: number, totalPrice: string) => Promise<void>;
   onClaimBack?: (assetId: string, assetType: string) => Promise<void>;
   onReturnAsset?: (assetId: string, assetType: string) => Promise<void>;
   isOwner?: boolean;
@@ -67,6 +67,10 @@ export default function AssetCard({
       // For marketplace rentals, we need to send listingId (not assetId)
       // marketplace.move expects listing_id to find the listing in dynamic fields
       const idToSend = asset.listingId || getAssetId();
+      console.log("🎯 AssetCard handleRentClick:");
+      console.log("  - asset.listingId:", asset.listingId);
+      console.log("  - idToSend:", idToSend);
+      console.log("  - asset.type:", asset.type);
       await onRent(idToSend, asset.type, days, totalPrice.toString());
     }
   };

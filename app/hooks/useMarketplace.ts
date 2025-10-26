@@ -45,18 +45,26 @@ export function useMarketplace() {
    * @returns Transaction nesnesi.
    */
   const rentAsset = async (listingId: string, assetType: string, days: number, totalPrice: string) => {
+    console.log("🔧 useMarketplace rentAsset:");
+    console.log("  - listingId:", listingId);
+    console.log("  - assetType:", assetType);
+    console.log("  - days:", days);
+    console.log("  - totalPrice:", totalPrice);
+    
     const totalPriceInMIST = BigInt(parseFloat(totalPrice) * 1_000_000_000);
     const tx = new Transaction();
 
     // Ödeme için coin oluştur
     const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(totalPriceInMIST)]);
 
+    console.log("  - Calling Move function with listing_id:", listingId);
+
     tx.moveCall({
       target: `${PACKAGE_ID}::marketplace::rent_asset`,
       typeArguments: [assetType], // Generic tip argümanı
       arguments: [
         tx.object(MARKETPLACE_ID),      // marketplace: &mut Marketplace
-        tx.pure.id(listingId),           // asset_id: ID (listing'in ID'si)
+        tx.pure.id(listingId),           // listing_id: ID
         coin,                            // payment: coin::Coin<SUI>
         tx.pure.u64(days),               // rental_days: u64
         tx.object(SUI_CLOCK_OBJECT_ID),  // clock: &Clock

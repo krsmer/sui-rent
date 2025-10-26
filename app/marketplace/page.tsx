@@ -18,6 +18,12 @@ export default function MarketplacePage() {
 
   const handleRent = async (listingId: string, assetType: string, days: number, totalPrice: string) => {
     // AssetCard'dan direkt listingId gelir, listing aramaya gerek yok
+    console.log("🏪 Marketplace handleRent called:");
+    console.log("  - listingId:", listingId);
+    console.log("  - assetType:", assetType);
+    console.log("  - days:", days);
+    console.log("  - totalPrice:", totalPrice);
+    
     rentAsset(listingId, assetType, days, totalPrice).then((tx) => {
       signAndExecute(
         {
@@ -64,16 +70,24 @@ export default function MarketplacePage() {
   }
 
   // ListedAsset tipini AssetCard'ın beklediği Asset tipine dönüştür
-  const assetsToDisplay: Array<Asset & { pricePerDay: bigint, listingId: string }> = listedAssets?.map(la => ({
-    id: la.assetId,
-    name: la.name,
-    description: la.description,
-    url: la.url,
-    owner: la.owner,
-    type: la.type, // Asset tipi eklendi
-    pricePerDay: la.pricePerDay,
-    listingId: la.listingId,
-  })) || [];
+  const assetsToDisplay: Array<Asset & { pricePerDay: bigint, listingId: string }> = listedAssets?.map(la => {
+    console.log("🔄 Mapping listed asset:", {
+      listingId: la.listingId,
+      assetId: la.assetId,
+      name: la.name,
+      type: la.type
+    });
+    return {
+      id: la.assetId,
+      name: la.name,
+      description: la.description,
+      url: la.url,
+      owner: la.owner,
+      type: la.type,
+      pricePerDay: la.pricePerDay,
+      listingId: la.listingId, // ✅ ÇOK ÖNEMLİ: listingId'yi ekliyoruz
+    };
+  }) || [];
 
   return (
     <div className="container mx-auto px-4 py-12">
