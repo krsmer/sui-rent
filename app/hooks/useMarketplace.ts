@@ -19,9 +19,18 @@ export function useMarketplace() {
    * @returns Transaction nesnesi.
    */
   const listAsset = async (assetId: string, assetType: string, price: string) => {
+    console.log("📝 useMarketplace listAsset:");
+    console.log("  - assetId:", assetId);
+    console.log("  - assetType:", assetType);
+    console.log("  - price (SUI):", price);
+    
     const priceInMIST = BigInt(parseFloat(price) * 1_000_000_000);
+    console.log("  - priceInMIST:", priceInMIST.toString());
 
     const tx = new Transaction();
+
+    console.log("  - PACKAGE_ID:", PACKAGE_ID);
+    console.log("  - MARKETPLACE_ID:", MARKETPLACE_ID);
 
     tx.moveCall({
       target: `${PACKAGE_ID}::marketplace::list_for_rent`,
