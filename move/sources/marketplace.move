@@ -84,6 +84,8 @@ module marketplace::marketplace {
             earned_amount: 0,
         };
 
+        let listing_id = object::uid_to_inner(&listing.id);
+
         event::emit(AssetListed {
             asset_id: asset_id,
             owner: tx_context::sender(ctx),
@@ -93,8 +95,8 @@ module marketplace::marketplace {
         // Asset'i listing içine koy
         dof::add(&mut listing.id, b"asset", asset);
         
-        // Listing'i Marketplace'e dynamic field olarak ekle
-        dof::add(&mut marketplace.id, asset_id, listing);
+        // Listing'i Marketplace'e dynamic field olarak ekle (listing_id ile)
+        dof::add(&mut marketplace.id, listing_id, listing);
     }
 
     /// Rent an asset from the marketplace
@@ -103,14 +105,14 @@ module marketplace::marketplace {
     /// Renter receives a RentalReceipt NFT as proof
     public fun rent_asset<T: key + store>(
         marketplace: &mut Marketplace,
-        asset_id: ID,
+        listing_id: ID,
         payment: coin::Coin<SUI>,
         rental_days: u64,
         clock: &Clock,
         ctx: &mut TxContext
     ) {
-        // Listing'i marketplace'den al
-        let listing: &mut Listing = dof::borrow_mut(&mut marketplace.id, asset_id);
+        // Listing'i marketplace'den al (listing_id kullanarak)
+        let listing: &mut Listing = dof::borrow_mut(&mut marketplace.id, listing_id);
         
         // Kendi NFT'ini kiralayamazsın kontrolü
         assert!(listing.owner != tx_context::sender(ctx), 1); // ERR_OWNER_CANNOT_RENT
@@ -141,9 +143,9 @@ module marketplace::marketplace {
         // Create and send RentalReceipt to renter
         let receipt = RentalReceipt {
             id: object::new(ctx),
-            asset_id: asset_id,
+            asset_id: listing.asset_id,
             asset_type: string::utf8(b"Generic NFT"), // Type info can be customized
-            listing_id: object::uid_to_inner(&listing.id),
+            listing_id: listing_id,
             owner: listing.owner,
             renter: renter,
             rented_until: rental_end,
@@ -162,11 +164,11 @@ module marketplace::marketplace {
     /// Error: Asset is currently rented (ERR_STILL_RENTED = 5)
     public fun claim_asset<T: key + store>(
         marketplace: &mut Marketplace,
-        asset_id: ID,
+        listing_id: ID,
         clock: &Clock,
         ctx: &mut TxContext
     ) {
-        // Listing'i marketplace'den çıkar
+        // Listing'i marketplace'den çıkar (listing_id kullanarak)
         let Listing {
             id,
             asset_id: _,
@@ -175,7 +177,7 @@ module marketplace::marketplace {
             rented_until,
             renter,
             earned_amount,
-        } = dof::remove(&mut marketplace.id, asset_id);
+        } = dof::remove(&mut marketplace.id, listing_id);
 
         // Sadece owner geri alabilir
         assert!(owner == tx_context::sender(ctx), 4); // ERR_NOT_OWNER
@@ -204,11 +206,11 @@ module marketplace::marketplace {
     /// Error: Rental period not ended (ERR_RENTAL_NOT_ENDED = 7)
     public fun return_asset<T: key + store>(
         marketplace: &mut Marketplace,
-        asset_id: ID,
+        listing_id: ID,
         clock: &Clock,
         ctx: &mut TxContext
     ) {
-        // Listing'i marketplace'den çıkar
+        // Listing'i marketplace'den çıkar (listing_id kullanarak)
         let Listing {
             id,
             asset_id: _,
@@ -217,7 +219,7 @@ module marketplace::marketplace {
             rented_until,
             renter,
             earned_amount,
-        } = dof::remove(&mut marketplace.id, asset_id);
+        } = dof::remove(&mut marketplace.id, listing_id);
 
         // Kiralama süresi bitmiş olmalı
         let current_time = clock::timestamp_ms(clock);
