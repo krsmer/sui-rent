@@ -11,8 +11,7 @@ import {
   WalletProvider,
 } from "@mysten/dapp-kit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import Link from "next/link";
-import { ConnectWalletButton } from "./components/ConnectWalletButton";
+import { Navigation } from "@/components/navigation";
 import { useState } from "react";
 
 const geistSans = Geist({
@@ -30,12 +29,6 @@ const networks = {
   devnet: { url: getFullnodeUrl("devnet") },
 };
 
-// Metadata export'u, bu dosya "use client" olarak işaretlendiği için kaldırıldı.
-// export const metadata: Metadata = {
-//   title: "Sui Asset Rental",
-//   description: "A decentralized asset rental marketplace on Sui.",
-// };
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -51,23 +44,8 @@ export default function RootLayout({
         <QueryClientProvider client={queryClient}>
           <SuiClientProvider networks={networks} defaultNetwork="testnet">
             <WalletProvider autoConnect>
-              <header className="bg-gray-900 text-white p-4">
-                <div className="container mx-auto flex justify-between items-center">
-                  <Link href="/" className="text-2xl font-bold">
-                    SuiRent
-                  </Link>
-                  <nav className="flex items-center space-x-4">
-                    <Link href="/marketplace" className="hover:text-gray-300">
-                      Marketplace
-                    </Link>
-                    <Link href="/my-assets" className="hover:text-gray-300">
-                      My Assets
-                    </Link>
-                    <ConnectWalletButton />
-                  </nav>
-                </div>
-              </header>
-              <main>{children}</main>
+              <Navigation />
+              <main className="min-h-screen">{children}</main>
             </WalletProvider>
           </SuiClientProvider>
         </QueryClientProvider>

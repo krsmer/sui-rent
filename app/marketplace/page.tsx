@@ -1,12 +1,15 @@
 "use client";
-import SplitText from '@/components/SplitText';
 
 import React from 'react';
 import { useSignAndExecuteTransaction } from "@mysten/dapp-kit";
+import { Store, Search, Package } from 'lucide-react';
 import AssetCard from '../components/AssetCard';
 import useListedAssets from '../hooks/useListedAssets';
 import { useMarketplace } from '../hooks/useMarketplace';
 import { Asset } from '../hooks/useMyAssets';
+import { FadeIn } from '@/components/fade-in';
+import { StaggerContainer } from '@/components/stagger-container';
+import { Card } from '@/components/ui/card';
 
 export default function MarketplacePage() {
   const { data: listedAssets, isLoading, error, refetch } = useListedAssets();
@@ -47,7 +50,10 @@ export default function MarketplacePage() {
   if (isLoading) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen p-4">
-        <h1 className="text-2xl font-bold">Loading marketplace...</h1>
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+          <h1 className="text-2xl font-bold text-muted-foreground">Loading marketplace...</h1>
+        </div>
       </main>
     );
   }
@@ -55,7 +61,13 @@ export default function MarketplacePage() {
   if (error) {
     return (
       <main className="flex flex-col items-center justify-center min-h-screen p-4">
-        <h1 className="text-2xl font-bold">Error loading marketplace: {error.message}</h1>
+        <Card className="p-8 border-destructive">
+          <div className="flex flex-col items-center gap-4">
+            <Package className="h-16 w-16 text-destructive" />
+            <h1 className="text-2xl font-bold text-destructive">Error loading marketplace</h1>
+            <p className="text-muted-foreground">{error.message}</p>
+          </div>
+        </Card>
       </main>
     );
   }
@@ -72,23 +84,48 @@ export default function MarketplacePage() {
   })) || [];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center mb-8">Marketplace</h1>
+    <div className="container mx-auto px-4 py-12">
+      <FadeIn>
+        <div className="flex items-center justify-center gap-3 mb-4">
+          
+          <h1 className="text-5xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            Marketplace
+          </h1>
+        </div>
+        <p className="text-center text-muted-foreground text-lg mb-12">
+          Browse and rent NFTs from other users
+        </p>
+      </FadeIn>
       
       {assetsToDisplay.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {assetsToDisplay.map((asset) => (
-            <AssetCard 
-              key={asset.id} 
-              asset={asset} 
-              isOwner={false}
-              pricePerDay={asset.pricePerDay}
-              onRent={handleRent}
-            />
-          ))}
-        </div>
+        <StaggerContainer staggerDelay={0.1}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {assetsToDisplay.map((asset) => (
+              <FadeIn key={asset.id} delay={0.05}>
+                <AssetCard 
+                  asset={asset} 
+                  isOwner={false}
+                  pricePerDay={asset.pricePerDay}
+                  onRent={handleRent}
+                />
+              </FadeIn>
+            ))}
+          </div>
+        </StaggerContainer>
       ) : (
-        <p className='text-center'>No assets are currently listed for rent.</p>
+        <FadeIn delay={0.2}>
+          <Card className="p-16">
+            <div className="flex flex-col items-center gap-4">
+              <Search className="h-20 w-20 text-muted-foreground/50" />
+              <p className="text-center text-2xl font-semibold text-muted-foreground">
+                No assets are currently listed for rent
+              </p>
+              <p className="text-center text-muted-foreground">
+                Check back later or list your own NFTs!
+              </p>
+            </div>
+          </Card>
+        </FadeIn>
       )}
     </div>
   );
