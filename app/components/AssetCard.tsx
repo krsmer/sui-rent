@@ -64,8 +64,10 @@ export default function AssetCard({
 
   const handleRentClick = async () => {
     if (onRent && pricePerDay) {
-      // totalPrice already calculated in SUI, pass it to onRent which expects SUI
-      await onRent(getAssetId(), asset.type, days, totalPrice.toString());
+      // For marketplace rentals, we need to send listingId (not assetId)
+      // marketplace.move expects listing_id to find the listing in dynamic fields
+      const idToSend = asset.listingId || getAssetId();
+      await onRent(idToSend, asset.type, days, totalPrice.toString());
     }
   };
 
