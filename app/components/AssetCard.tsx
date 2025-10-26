@@ -55,8 +55,8 @@ export default function AssetCard({
 
   const handleListSubmit = async () => {
     if (onList && priceInput) {
-      const priceInMist = (parseFloat(priceInput) * 1_000_000_000).toString();
-      await onList(getAssetId(), asset.type, priceInMist);
+      // Send price in SUI, useMarketplace will convert to MIST
+      await onList(getAssetId(), asset.type, priceInput);
       setShowListModal(false);
       setPriceInput('');
     }

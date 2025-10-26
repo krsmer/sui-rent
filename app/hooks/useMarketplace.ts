@@ -15,7 +15,7 @@ export function useMarketplace() {
    * Bir varlığı pazar yerinde kiralamak için listeler.
    * @param assetId Listelenecek varlığın object ID'si.
    * @param assetType Varlığın tam Move tipi (örn: "0xPACKAGE::module::Type")
-   * @param price Günlük kiralama bedeli (MIST cinsinden, 1 SUI = 1,000,000,000 MIST).
+   * @param price Günlük kiralama bedeli (SUI cinsinden).
    * @returns Transaction nesnesi.
    */
   const listAsset = async (assetId: string, assetType: string, price: string) => {
