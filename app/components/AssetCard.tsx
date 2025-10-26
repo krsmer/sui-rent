@@ -16,6 +16,7 @@ interface AssetCardProps {
 
 export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, onRent, onClaimBack, onReturnAsset }: AssetCardProps) {
   const [days, setDays] = useState(1);
+  const [imageError, setImageError] = useState(false);
 
   // Fiyatı SUI cinsine çevir (1 SUI = 1,000,000,000 MIST)
   const priceInSUI = pricePerDay ? Number(pricePerDay) / 1_000_000_000 : 0;
@@ -58,14 +59,37 @@ export default function AssetCard({ asset, isOwner, pricePerDay, onListForRent, 
 
   return (
     <div className="border rounded-lg overflow-hidden shadow-lg bg-white">
-      <div className="relative w-full h-56">
-        <Image
-          src={asset.url || '/placeholder.svg'} // Placeholder görseli
-          alt={asset.name}
-          layout="fill"
-          objectFit="cover"
-          className="bg-gray-200"
-        />
+      <div className="relative w-full h-56 bg-gray-200">
+        {!imageError && asset.url ? (
+          <Image
+            src={asset.url}
+            alt={asset.name}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover"
+            onError={() => setImageError(true)}
+            unoptimized={asset.url.includes('ipfs') || asset.url.includes('blob')}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200">
+            <div className="text-center">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+              <p className="mt-2 text-xs text-gray-500">No Image</p>
+            </div>
+          </div>
+        )}
       </div>
       <div className="p-4">
         <h3 className="text-lg font-bold">{asset.name}</h3>

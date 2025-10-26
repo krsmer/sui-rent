@@ -48,15 +48,37 @@ export default function useMyAssets(ownerAddress?: string) {
 
       console.log("📦 All objects:", allObjects);
 
-      // Manuel filtreleme yap - SADECE YENİ CONTRACT'TAKI ASSET'LERİ GÖSTER
+      // NFT'leri filtrele - display object özelliği olanlar veya bizim Asset türündekiler
       const filteredData = allObjects?.filter((obj) => {
         const objectType = obj.data?.type;
-        console.log("Checking type:", objectType, "against:", ASSET_TYPE);
-        // Tam eşleşme kontrolü - sadece yeni package ID'li asset'ler
-        return objectType === ASSET_TYPE;
+        const hasDisplay = obj.data?.display;
+        const hasContent = obj.data?.content;
+        
+        // Bizim asset tipimizse kesinlikle göster
+        if (objectType === ASSET_TYPE) {
+          console.log("✅ Our asset type:", objectType);
+          return true;
+        }
+        
+        // Display özelliği varsa (genelde NFT'lerdir)
+        if (hasDisplay && hasDisplay.data) {
+          console.log("✅ Has display:", objectType);
+          return true;
+        }
+        
+        // Content'te name, description, url gibi NFT alanları varsa
+        if (hasContent && 'fields' in hasContent) {
+          const fields = hasContent.fields as any;
+          if (fields.name || fields.url || fields.image_url) {
+            console.log("✅ Looks like NFT:", objectType);
+            return true;
+          }
+        }
+        
+        return false;
       });
 
-      console.log("🎯 Filtered assets (new contract only):", filteredData);
+      console.log("🎯 Filtered assets (all NFTs):", filteredData);
 
       if (!filteredData || filteredData.length === 0) {
         console.log("⚠️ No assets found");
@@ -68,12 +90,27 @@ export default function useMyAssets(ownerAddress?: string) {
       const assets = filteredData.map((response: SuiObjectResponse) => {
         const obj = response.data!;
         const fields = (obj.content?.dataType === 'moveObject' && obj.content.fields) ? obj.content.fields as any : {};
-        console.log("🎨 Object:", obj.objectId, "Fields:", fields);
+        const display = obj.display?.data;
+        
+        console.log("🎨 Object:", obj.objectId, "Fields:", fields, "Display:", display);
+        
+        // Display data varsa öncelikle onu kullan (standart NFT formatı)
+        if (display) {
+          return {
+            id: obj.objectId,
+            name: display.name || fields.name || "Unnamed Asset",
+            description: display.description || fields.description || "No description.",
+            url: display.image_url || display.url || fields.url || fields.image_url || "",
+            owner: ownerAddress,
+          };
+        }
+        
+        // Display yoksa fields'den al
         return {
           id: obj.objectId,
           name: fields.name || "Unnamed Asset",
           description: fields.description || "No description.",
-          url: fields.url || "",
+          url: fields.url || fields.image_url || "",
           owner: ownerAddress,
         };
       });

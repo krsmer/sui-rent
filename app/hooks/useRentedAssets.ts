@@ -64,11 +64,12 @@ export default function useRentedAssets(address?: string) {
               console.log("✅ Found rented asset:", listing);
 
               // Get the asset from the listing's dynamic field
+              // Asset is stored with key "asset" as vector<u8>
               const assetFields = await client.getDynamicFieldObject({
                 parentId: field.objectId,
                 name: {
-                  type: "address",
-                  value: listing.asset_id,
+                  type: "vector<u8>",
+                  value: [97, 115, 115, 101, 116], // "asset" in bytes
                 },
               });
 

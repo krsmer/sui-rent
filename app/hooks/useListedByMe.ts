@@ -64,11 +64,12 @@ export default function useListedByMe(address?: string) {
               console.log("✅ Found my listing:", listing);
 
               // Get the asset from the listing's dynamic field
+              // Asset is stored with key "asset" as vector<u8>
               const assetFields = await client.getDynamicFieldObject({
                 parentId: field.objectId,
                 name: {
                   type: "vector<u8>",
-                  value: "asset",
+                  value: [97, 115, 115, 101, 116], // "asset" in bytes
                 },
               });
 

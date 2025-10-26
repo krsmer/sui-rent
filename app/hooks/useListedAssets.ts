@@ -61,7 +61,7 @@ export default function useListedAssets() {
           parentId: listingObj.data!.objectId,
           name: {
             type: "vector<u8>",
-            value: "asset"
+            value: [97, 115, 115, 101, 116] // "asset" in bytes
           }
         });
 
