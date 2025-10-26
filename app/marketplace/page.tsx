@@ -16,16 +16,9 @@ export default function MarketplacePage() {
   const { mutate: signAndExecute } = useSignAndExecuteTransaction();
   const { rentAsset } = useMarketplace();
 
-  const handleRent = async (assetId: string, assetType: string, days: number, totalPrice: string) => {
-    // assetId buraya geldiğinde aslında asset'in gerçek ID'si
-    const listing = listedAssets?.find(la => la.assetId === assetId);
-    if (!listing) {
-      alert("Listing not found!");
-      return;
-    }
-
-    // rentAsset'e listing.listingId göndermemiz lazım çünkü Move contract'ta bu ID ile listing bulunuyor
-    rentAsset(listing.listingId, assetType, days, totalPrice).then((tx) => {
+  const handleRent = async (listingId: string, assetType: string, days: number, totalPrice: string) => {
+    // AssetCard'dan direkt listingId gelir, listing aramaya gerek yok
+    rentAsset(listingId, assetType, days, totalPrice).then((tx) => {
       signAndExecute(
         {
           transaction: tx,
